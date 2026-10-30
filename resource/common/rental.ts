@@ -1,4 +1,14 @@
-import { bool, int, num, record, str, vec4, type Vec4, readPlacePed, type PlacePed } from "@aicore-fivem/lib/shared";
+import {
+  bool,
+  int,
+  num,
+  record,
+  str,
+  vec4,
+  type Vec4,
+  readPlacePed,
+  type PlacePed,
+} from "@aicore-fivem/lib/shared";
 
 /** ai-rental's contracts and panel content. No natives. */
 
