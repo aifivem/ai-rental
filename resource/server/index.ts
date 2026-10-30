@@ -1,6 +1,4 @@
-import { AdminPanel, aiLog, aiLogChannels, isOnline, notify, onClientCallback, resourceExport, triggerClientCallback, vehicleKeys } from "@aicore-fivem/lib/server";
-import { waitFor } from "@aicore-fivem/lib/shared";
-import { VEHICLE_BAGS } from "@aicore-fivem/shared";
+import { AdminPanel, aiLog, aiLogChannels, isOnline, notify, onClientCallback, resourceExport, spawnVehicle, vehicleKeys, vehicleType } from "@aicore-fivem/lib/server";
 import { Locale } from "common";
 import { EVENTS, readLocations, readSettings, type Location } from "common/rental";
 import { rentalSchema } from "./schema";
@@ -21,12 +19,6 @@ const posOf = (entity: number): Vec => {
 };
 const distance = (a: Vec, b: Vec) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const pedOf = (source: number) => GetPlayerPed(String(source));
-
-/** Vehicle spawn type of a model, asked from the renter's client (null: not a vehicle model). */
-async function vehicleType(source: number, model: string): Promise<string | null> {
-  const answer: unknown = await triggerClientCallback(EVENTS.vehicleType, source, [model]).catch(() => null);
-  return typeof answer === "string" && /^[a-z]{3,12}$/.test(answer) ? answer : null;
-}
 
 /** Whether another vehicle stands on the spawn point. */
 function spawnBlocked(at: Vec): boolean {
@@ -55,22 +47,17 @@ class Rentals {
     const offer = location.vehicles.find((v) => v.model === model);
     if (!offer) return fail("RENTAL_ERR_GONE");
     if (spawnBlocked(location.spawn)) return fail("RENTAL_ERR_BLOCKED");
-    const type = await vehicleType(source, model);
+    const type = await vehicleType(model, source);
     if (!type || !isOnline(source)) return fail("RENTAL_ERR_GONE");
     const total = offer.fee + offer.deposit;
     if (total > 0 && !core.RemoveMoney(source, content.settings.account, total, `rental:${location.id}`)) return fail("RENTAL_ERR_MONEY");
 
-    const s = location.spawn;
-    const vehicle = CreateVehicleServerSetter(GetHashKey(model), type, s.x, s.y, s.z, s.heading);
-    if (!(await waitFor(() => DoesEntityExist(vehicle) || undefined, 5000).catch(() => false))) {
+    const plate = `${content.settings.platePrefix}${Math.floor(Math.random() * 10 ** (8 - content.settings.platePrefix.length))}`.slice(0, 8);
+    const vehicle = await spawnVehicle({ model, type, coords: location.spawn, plate, fuel: 100, driver: source, keysTo: source, purpose: "rental" });
+    if (vehicle === null) {
       if (total > 0) core.AddMoney(source, content.settings.account, total, "rental:refund");
       return fail("RENTAL_ERR_GONE");
     }
-    const plate = `${content.settings.platePrefix}${Math.floor(Math.random() * 10 ** (8 - content.settings.platePrefix.length))}`.slice(0, 8);
-    SetVehicleNumberPlateText(vehicle, plate);
-    Entity(vehicle).state.set(VEHICLE_BAGS.fuel, 100, true);
-    SetPedIntoVehicle(pedOf(source), vehicle, -1);
-    vehicleKeys.give(source, vehicle);
 
     const timer = location.minutes > 0 ? setTimeout(() => this.expire(source), location.minutes * 60_000) : null;
     this.active.set(source, { location: location.id, vehicle, plate, deposit: offer.deposit, timer });

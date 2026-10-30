@@ -9,8 +9,6 @@ export const EVENTS = {
   giveBack: "ai-rental:giveBack",
   /** Server -> client: (active: boolean) whether the player has a rental (for the return prompt). */
   state: "ai-rental:state",
-  /** Server -> client callback: (model) -> spawn type or null, asked from the renter's client. */
-  vehicleType: "ai-rental:vehicleType",
 } as const;
 
 type Point = { x: number; y: number; z: number };
