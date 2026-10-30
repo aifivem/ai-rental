@@ -1,6 +1,6 @@
-import type { PanelSchema } from "@aicore-fivem/shared"
+import type { PanelSchema } from "@aicore-fivem/shared";
 
-const MODEL = "^[a-z0-9_]{1,32}$"
+const MODEL = "^[a-z0-9_]{1,32}$";
 
 /** ai-rental's panel: rental points with their vehicles, and the money settings. */
 export const rentalSchema: PanelSchema = {
@@ -215,4 +215,4 @@ export const rentalSchema: PanelSchema = {
       ],
     },
   ],
-}
+};
