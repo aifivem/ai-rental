@@ -2,12 +2,13 @@ import {
   bool,
   int,
   num,
+  type PlacePed,
+  readBlipStyle,
+  readPlacePed,
   record,
   str,
   vec4,
   type Vec4,
-  readPlacePed,
-  type PlacePed,
 } from "@aicore-fivem/lib/shared";
 
 /** ai-rental's contracts and panel content. No natives. */
@@ -106,11 +107,11 @@ export function readLocations(
       coords: point(v.coords),
       spawn: vec4(v.spawn, { x: 0, y: 0, z: 0, heading: 0 }),
       blip: bool(v.blip, true),
-      blipStyle: {
-        sprite: int(record(v.blipStyle).sprite, 225, 0, 1000),
-        color: int(record(v.blipStyle).color, 2, 0, 100),
-        scale: num(record(v.blipStyle).scale, 0.7, 0.3, 2),
-      },
+      blipStyle: readBlipStyle(v.blipStyle, {
+        sprite: 225,
+        color: 2,
+        scale: 0.7,
+      }),
       minutes: int(v.minutes, 60, 0, 1440),
       vehicles,
     });

@@ -1,4 +1,8 @@
-import { PLACE_PED_SPEC, placePedFields } from "@aicore-fivem/lib/shared";
+import {
+  BLIP_STYLE_FIELDS,
+  PLACE_PED_SPEC,
+  placePedFields,
+} from "@aicore-fivem/lib/shared";
 import type { PanelSchema } from "@aicore-fivem/shared";
 
 const MODEL = "^[a-z0-9_]{1,32}$";
@@ -63,11 +67,7 @@ export const rentalSchema: PanelSchema = {
         blipStyle: {
           type: "object",
           optional: true,
-          fields: {
-            sprite: { type: "number", min: 0, max: 1000, integer: true },
-            color: { type: "number", min: 0, max: 100, integer: true },
-            scale: { type: "number", min: 0.3, max: 2 },
-          },
+          fields: BLIP_STYLE_FIELDS,
         },
         minutes: { type: "number", min: 0, max: 1440, integer: true },
         vehicles: {
