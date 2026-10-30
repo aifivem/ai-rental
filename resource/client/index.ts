@@ -1,15 +1,13 @@
 import {
   AdminWorld,
   cache,
-  loadLocaleTexts,
+  callAction,
   menu,
   notify,
   onCache,
   onServerEvent,
   Points,
-  triggerServerCallback,
 } from "@aicore-fivem/lib/client";
-import { record } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import {
   EVENTS,
@@ -19,18 +17,13 @@ import {
 } from "common/rental";
 
 const world = new AdminWorld(["settings", "vehicles", "locations"]);
-const texts = loadLocaleTexts();
 const readAllLocations = () =>
   readLocations(world.get("locations"), readVehicles(world.get("vehicles")));
+const settings = world.view("settings", readSettings);
 const content = {
-  settings: readSettings(world.get("settings")),
   locations: readAllLocations(),
 };
-const errorText = (v: unknown, fallback: string): string => {
-  const key =
-    typeof record(v).error === "string" ? String(record(v).error) : fallback;
-  return texts[key] ?? key;
-};
+const FALLBACK = { fallback: "RENTAL_ERR_FAR" };
 let renting = false;
 
 /**
@@ -53,7 +46,7 @@ function rebuild(): void {
       coords: at.coords,
       label: Locale("RENTAL_PROMPT_RETURN"),
       icon: "rotate-left",
-      radius: content.settings.returnRadius,
+      radius: settings.value.returnRadius,
       canShow: () => renting && cache.vehicle !== false,
       onPressed: () => giveBack(at.id),
     });
@@ -61,10 +54,7 @@ function rebuild(): void {
 }
 
 rebuild();
-world.onChange("settings", () => {
-  content.settings = readSettings(world.get("settings"));
-  rebuild();
-});
+world.onChange("settings", rebuild);
 const locationsChanged = () => {
   content.locations = readAllLocations();
   rebuild();
@@ -99,11 +89,8 @@ async function rent(id: string): Promise<void> {
     })),
   });
   if (!pick) return;
-  const result = record(
-    await triggerServerCallback(EVENTS.rent, [id, pick]).catch(() => null),
-  );
-  if (result.ok !== true)
-    return notify(errorText(result, "RENTAL_ERR_FAR"), "error");
+  const result = await callAction(EVENTS.rent, [id, pick], FALLBACK);
+  if (!result) return;
   notify(
     at.minutes > 0
       ? Locale("RENTAL_RENTED", String(result.plate), at.minutes)
@@ -113,15 +100,15 @@ async function rent(id: string): Promise<void> {
 }
 
 async function giveBack(id: string): Promise<void> {
-  const result = record(
-    await triggerServerCallback(EVENTS.giveBack, [id]).catch(() => null),
-  );
-  if (result.ok !== true)
-    return notify(errorText(result, "RENTAL_ERR_FAR"), "error");
+  const result = await callAction(EVENTS.giveBack, [id], FALLBACK);
+  if (!result) return;
+  const refund = typeof result.refund === "number" ? result.refund : 0;
   notify(
-    Number(result.refund) > 0
-      ? Locale("RENTAL_RETURNED", Number(result.refund))
-      : Locale("RENTAL_RETURNED_NO_REFUND"),
+    refund <= 0
+      ? Locale("RENTAL_RETURNED_NO_REFUND")
+      : result.damaged === true
+        ? Locale("RENTAL_RETURNED_DAMAGED", refund)
+        : Locale("RENTAL_RETURNED", refund),
     "success",
   );
 }

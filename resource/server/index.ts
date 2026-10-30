@@ -2,16 +2,27 @@ import {
   AdminPanel,
   aiLog,
   aiLogChannels,
+  entityCoords,
+  isNear,
   isOnline,
+  nearestVehicleAt,
   notify,
   onClientCallback,
+  PlayerMap,
+  randomPlate,
   resourceExport,
   spawnVehicle,
   vehicleKeys,
   vehicleType,
 } from "@aicore-fivem/lib/server";
-import { isRecord } from "@aicore-fivem/lib/shared";
-import { Locale } from "common";
+import {
+  distance,
+  fail,
+  isRecord,
+  oneArg,
+  readText,
+} from "@aicore-fivem/lib/shared";
+import { Locale, ResourceName } from "common";
 import {
   EVENTS,
   readLocations,
@@ -26,17 +37,16 @@ const core = resourceExport("ai-core");
 const panel = new AdminPanel(rentalSchema);
 migrateLocations(panel);
 const vehicles = () => readVehicles(panel.get("vehicles"));
-/** Panel content, parsed again after every change. */
+const settings = panel.view("settings", readSettings);
+/** Panel content; locations are parsed again when they or the vehicle list change (their rows name list records). */
 const content = {
-  settings: readSettings(panel.get("settings")),
+  get settings() {
+    return settings.value;
+  },
   locations: readLocations(panel.get("locations"), vehicles()),
 };
 const readAllLocations = () =>
   (content.locations = readLocations(panel.get("locations"), vehicles()));
-panel.onChange(
-  "settings",
-  () => (content.settings = readSettings(panel.get("settings"))),
-);
 panel.onChange("vehicles", readAllLocations);
 panel.onChange("locations", readAllLocations);
 // A rental point's vehicle rows name records of the vehicle list ("" = a row not picked yet).
@@ -52,21 +62,11 @@ panel.rule("locations", (_key, next) => {
 });
 aiLogChannels({ rentals: {} });
 
-type Vec = { x: number; y: number; z: number };
-const fail = (error: string) => ({ ok: false as const, error });
-const posOf = (entity: number): Vec => {
-  const [x = 0, y = 0, z = 0] = GetEntityCoords(entity);
-  return { x, y, z };
-};
-const distance = (a: Vec, b: Vec) =>
-  Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-const pedOf = (source: number) => GetPlayerPed(String(source));
-
-/** Whether another vehicle stands on the spawn point. */
-function spawnBlocked(at: Vec): boolean {
-  for (const vehicle of GetAllVehicles() as number[])
-    if (distance(posOf(vehicle), at) < 3) return true;
-  return false;
+/** Share of the deposit a returned vehicle earns back: its engine and body health (1 = whole, 0 = wrecked). */
+function condition(vehicle: number): number {
+  const engine = Math.max(0, Math.min(1000, GetVehicleEngineHealth(vehicle)));
+  const body = Math.max(0, Math.min(1000, GetVehicleBodyHealth(vehicle)));
+  return (engine + body) / 2000;
 }
 
 interface Rental {
@@ -79,7 +79,10 @@ interface Rental {
 
 /** One rental per player, in memory (a rental ends with the session; the deposit only comes back on return). */
 class Rentals {
-  private readonly active = new Map<number, Rental>();
+  /** A drop ends the rental: vehicle gone, deposit kept. */
+  private readonly active = new PlayerMap<Rental>({
+    onDrop: (source, rental) => this.finish(source, rental, true),
+  });
 
   has(source: number): boolean {
     return this.active.has(source);
@@ -96,7 +99,7 @@ class Rentals {
     const offer = location.vehicles.find((v) => v.id === vehicleKey);
     if (!offer) return fail("RENTAL_ERR_GONE");
     const model = offer.model;
-    if (spawnBlocked(location.spawn)) return fail("RENTAL_ERR_BLOCKED");
+    if (nearestVehicleAt(location.spawn, 3)) return fail("RENTAL_ERR_BLOCKED");
     const type = await vehicleType(model, source);
     if (!type || !isOnline(source)) return fail("RENTAL_ERR_GONE");
     const total = offer.fee + offer.deposit;
@@ -111,11 +114,7 @@ class Rentals {
     )
       return fail("RENTAL_ERR_MONEY");
 
-    const plate =
-      `${content.settings.platePrefix}${Math.floor(Math.random() * 10 ** (8 - content.settings.platePrefix.length))}`.slice(
-        0,
-        8,
-      );
+    const plate = randomPlate(content.settings.platePrefix);
     const vehicle = await spawnVehicle({
       model,
       type,
@@ -129,6 +128,15 @@ class Rentals {
     if (vehicle === null) {
       if (total > 0)
         core.AddMoney(source, content.settings.account, total, "rental:refund");
+      return fail("RENTAL_ERR_GONE");
+    }
+    // The player dropped while the vehicle was made: the drop handler already ran, so nothing may be stored.
+    if (!isOnline(source)) {
+      DeleteEntity(vehicle);
+      aiLog("rentals", "renter left during the spawn", {
+        source,
+        metadata: { location: location.id, plate },
+      });
       return fail("RENTAL_ERR_GONE");
     }
 
@@ -157,31 +165,37 @@ class Rentals {
     return { ok: true, plate, minutes: location.minutes };
   }
 
-  /** The vehicle back at a rental point: the deposit comes back while the vehicle is still whole. */
+  /** The vehicle back at a rental point: the deposit comes back scaled by the vehicle's condition. */
   giveBack(
     source: number,
     location: Location,
-  ): { ok: true; refund: number } | ReturnType<typeof fail> {
+  ): { ok: true; refund: number; damaged: boolean } | ReturnType<typeof fail> {
     const rental = this.active.get(source);
     if (!rental) return fail("RENTAL_ERR_NONE");
     if (!DoesEntityExist(rental.vehicle)) {
       this.end(source, false);
-      return { ok: true, refund: 0 };
+      return { ok: true, refund: 0, damaged: true };
     }
     if (
-      distance(posOf(rental.vehicle), location.coords) >
+      distance(entityCoords(rental.vehicle), location.coords) >
       content.settings.returnRadius
     )
       return fail("RENTAL_ERR_BRING");
-    const refund = rental.deposit;
+    const share = condition(rental.vehicle);
+    const refund = Math.floor(rental.deposit * share);
     this.end(source, true);
     if (refund > 0)
       core.AddMoney(source, content.settings.account, refund, "rental:deposit");
     aiLog("rentals", "gave a rental back", {
       source,
-      metadata: { location: location.id, plate: rental.plate, refund },
+      metadata: {
+        location: location.id,
+        plate: rental.plate,
+        refund,
+        deposit: rental.deposit,
+      },
     });
-    return { ok: true, refund };
+    return { ok: true, refund, damaged: share < 0.999 };
   }
 
   /** The time ran out: the vehicle goes, the deposit is kept. */
@@ -207,6 +221,10 @@ class Rentals {
     const rental = this.active.get(source);
     if (!rental) return;
     this.active.delete(source);
+    this.finish(source, rental, remove);
+  }
+
+  private finish(source: number, rental: Rental, remove: boolean): void {
     if (rental.timer) clearTimeout(rental.timer);
     if (remove && DoesEntityExist(rental.vehicle)) {
       if (isOnline(source)) vehicleKeys.remove(source, rental.vehicle);
@@ -217,44 +235,40 @@ class Rentals {
 }
 
 const rentals = new Rentals();
-const location = (id: unknown): Location | null =>
-  typeof id === "string" ? (content.locations.get(id) ?? null) : null;
-
 onClientCallback(
   EVENTS.rent,
   {
-    args: ([id, vehicle]): [string, string] | null =>
-      typeof id === "string" &&
-      typeof vehicle === "string" &&
-      /^[a-z0-9_]{1,32}$/.test(vehicle)
-        ? [id, vehicle]
-        : null,
+    args: ([id, vehicle]): [string, string] | null => {
+      const at = readText(id, 64);
+      return at !== null &&
+        typeof vehicle === "string" &&
+        /^[a-z0-9_]{1,32}$/.test(vehicle)
+        ? [at, vehicle]
+        : null;
+    },
+    // Each rent walks the world's vehicles for a blocked spawn spot.
+    rate: { count: 2, windowMs: 5_000 },
     lock: true,
   },
   async (source, id, vehicle) => {
-    const at = location(id);
-    if (!at || distance(posOf(pedOf(source)), at.coords) > 3)
-      return fail("RENTAL_ERR_FAR");
+    const at = content.locations.get(id);
+    if (!at || !isNear(source, at.coords, 3)) return fail("RENTAL_ERR_FAR");
     return rentals.rent(source, at, vehicle);
   },
 );
 
 onClientCallback(
   EVENTS.giveBack,
-  { args: ([id]) => (typeof id === "string" ? [id] : null), lock: true },
+  { args: oneArg((v) => readText(v, 64)), lock: true },
   (source, id) => {
-    const at = location(id);
-    if (
-      !at ||
-      distance(posOf(pedOf(source)), at.coords) > content.settings.returnRadius
-    )
+    const at = content.locations.get(id);
+    if (!at || !isNear(source, at.coords, content.settings.returnRadius))
       return fail("RENTAL_ERR_FAR");
     return rentals.giveBack(source, at);
   },
 );
 
-on("playerDropped", () => rentals.end(Number(globalThis.source), true));
 on("onResourceStop", (resource: string) => {
-  if (resource !== GetCurrentResourceName()) return;
+  if (resource !== ResourceName) return;
   rentals.endAll();
 });

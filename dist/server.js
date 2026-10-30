@@ -67,8 +67,19 @@ function vec4(value, fallback) {
 		heading: num(v.heading, fallback.heading)
 	};
 }
-// ../../../packages/lib/src/shared/records.ts
-const isObject = (value) => typeof value == "object" && !!value && !Array.isArray(value);
+// ../../../packages/lib/src/shared/strict.ts
+function readText(value, max) {
+	if (typeof value != "string") return null;
+	let text = value.trim();
+	return text ? text.slice(0, max) : null;
+}
+const oneArg = (read) => ([value]) => {
+	let parsed = read(value);
+	return parsed === null ? null : [parsed];
+}, fail = (error) => ({
+	ok: !1,
+	error
+}), distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z), isObject = (value) => typeof value == "object" && !!value && !Array.isArray(value);
 function readRecords(raw, readOne) {
 	let out = new Map();
 	if (!isObject(raw)) return out;
@@ -315,7 +326,7 @@ const CORE = {
 	clientPlayerLoadedEvent: "ai-core:client:playerLoaded",
 	clientPlayerUnloadedEvent: "ai-core:client:playerUnloaded",
 	clientCharacterPortraitEvent: "ai-core:client:characterPortrait",
-	clientCharacterLookEvent: "ai-core:client:characterLook",
+	characterLooksEvent: "ai-core:client:characterLooks",
 	clientPromptPressedEvent: "ai-core:client:promptPressed",
 	clientCacheEvent: "ai-core:client:cache",
 	clientHudVisibleEvent: "ai-core:client:hudVisible",
@@ -382,6 +393,19 @@ function loadLocaleTexts(resource = GetCurrentResourceName()) {
 }
 // ../../../packages/lib/src/fivem/callbackNames.ts
 const requestEvent = (name) => `aicore:cb:${name}`, responseEvent = (resource) => `aicore:cbr:${resource}`;
+// ../../../packages/lib/src/server/position.ts
+function entityCoords(entity) {
+	let [x = 0, y = 0, z = 0] = GetEntityCoords(entity);
+	return {
+		x,
+		y,
+		z
+	};
+}
+function isNear(source, point, metres) {
+	let [x = 0, y = 0, z = 0] = GetEntityCoords(GetPlayerPed(String(source))), dx = x - point.x, dy = y - point.y, dz = z - point.z;
+	return dx * dx + dy * dy + dz * dz <= metres * metres;
+}
 resourceExport(CORE.resource);
 const log$5 = createLogger(GetCurrentResourceName()), gates = new Set();
 on("playerDropped", () => {
@@ -506,7 +530,7 @@ function toPatch(value) {
 		default: return null;
 	}
 }
-const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$14 = resourceExport(CORE.resource), ERR = {
+const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$15 = resourceExport(CORE.resource), ERR = {
 	type: "ADMIN_ERR_TYPE",
 	range: "ADMIN_ERR_RANGE",
 	length: "ADMIN_ERR_LENGTH",
@@ -520,7 +544,7 @@ const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(va
 		if (cached && Date.now() - cached.at < 2e3) return cached.values.size > 0 ? cached.values : null;
 		let list = [];
 		try {
-			list = core$14.GetLookupValues(source);
+			list = core$15.GetLookupValues(source);
 		} catch {}
 		let values = new Set(Array.isArray(list) ? list.filter((v) => typeof v == "string") : []);
 		return this.lists.set(source, {
@@ -723,7 +747,7 @@ function writeSchema(resource, name, text, log) {
 	(0, node_fs_promises.mkdir)(dir, { recursive: !0 }).then(() => (0, node_fs_promises.writeFile)(`${dir}/${name}.schema.json`, text, "utf8")).catch((error) => log.error(`writing ${resource}/${path} failed`, error));
 }
 // ../../../packages/lib/src/server/admin/panel.ts
-const core$13 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
+const core$14 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
 function imported(spec, value) {
 	let base = clone(spec.newRecord ?? {}), out = {};
 	for (let name of Object.keys(spec.sections)) {
@@ -747,7 +771,7 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$13.RegisterAdminPanel(this.resource));
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$14.RegisterAdminPanel(this.resource));
 	}
 	get(file) {
 		return this.data.get(file) ?? {};
@@ -881,7 +905,7 @@ var AdminPanel = class {
 		let spec = this.schema.files[file], data = this.get(file), value = key === void 0 ? data : data[key] ?? null;
 		this.dataFiles.get(file)?.write(data), this.views.changed(file, key, value);
 		for (let handler of this.handlers.get(file) ?? []) handler(key, value);
-		if (core$13.AdminPanelChanged({
+		if (core$14.AdminPanelChanged({
 			resource: this.resource,
 			file,
 			key,
@@ -920,7 +944,7 @@ function notify(source, text, kind = "info", duration) {
 }
 resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/online.ts
-const core$11 = resourceExport(CORE.resource);
+const core$12 = resourceExport(CORE.resource);
 var OnlinePlayers = class {
 	players = new Map();
 	onDuty = new Map();
@@ -929,7 +953,7 @@ var OnlinePlayers = class {
 		if (this.started) return;
 		this.started = !0;
 		let load = (source, character) => {
-			this.put(source, character, (core$11.GetJobs(source) ?? []).map((m) => m.job), (core$11.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$11.GetDutyJob(source));
+			this.put(source, character, (core$12.GetJobs(source) ?? []).map((m) => m.job), (core$12.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$12.GetDutyJob(source));
 		};
 		on(CORE.playerLoadedEvent, load), on(CORE.playerUnloadedEvent, (source) => this.drop(source)), on(CORE.jobsChangedEvent, (source, jobs) => {
 			let player = this.players.get(source);
@@ -938,8 +962,8 @@ var OnlinePlayers = class {
 			let player = this.players.get(source);
 			player && (player.gangs = gangs.map((m) => m.gang));
 		}), on(CORE.dutyChangedEvent, (source, job) => this.setDuty(source, job));
-		for (let source of core$11.GetLoadedSources()) {
-			let character = core$11.GetCharacter(source);
+		for (let source of core$12.GetLoadedSources()) {
+			let character = core$12.GetCharacter(source);
 			character && load(source, character);
 		}
 	}
@@ -985,10 +1009,10 @@ var OnlinePlayers = class {
 const EMPTY = new Set();
 new OnlinePlayers();
 // ../../../packages/lib/src/server/vehicleKeys.ts
-const core$10 = resourceExport(CORE.resource), vehicleKeys = {
-	give: (source, vehicle, purpose = "temporary") => core$10.GiveVehicleKeys(source, vehicle, purpose),
-	remove: (source, vehicle) => core$10.RemoveVehicleKeys(source, vehicle),
-	has: (source, vehicle) => core$10.HasVehicleKeys(source, vehicle)
+const core$11 = resourceExport(CORE.resource), vehicleKeys = {
+	give: (source, vehicle, purpose = "temporary") => core$11.GiveVehicleKeys(source, vehicle, purpose),
+	remove: (source, vehicle) => core$11.RemoveVehicleKeys(source, vehicle),
+	has: (source, vehicle) => core$11.HasVehicleKeys(source, vehicle)
 }, TYPES = new Set([
 	"automobile",
 	"bike",
@@ -1013,8 +1037,14 @@ async function seatPlayer(vehicle, source, seat) {
 		SetPedIntoVehicle(ped, vehicle, seat);
 	}, 2e3, 150).catch(() => !1) : !1;
 }
-function randomPlate() {
-	let digit = () => String(Math.floor(Math.random() * 10)), letter = () => "ABCDEFGHJKLMNPRSTUVWXYZ"[Math.floor(Math.random() * 23)] ?? "A";
+function randomPlate(prefix) {
+	let digit = () => String(Math.floor(Math.random() * 10));
+	if (prefix !== void 0) {
+		let plate = prefix.slice(0, 8);
+		for (; plate.length < 8;) plate += digit();
+		return plate;
+	}
+	let letter = () => "ABCDEFGHJKLMNPRSTUVWXYZ"[Math.floor(Math.random() * 23)] ?? "A";
 	return `${digit()}${digit()}${letter()}${letter()}${letter()}${digit()}${digit()}${digit()}`;
 }
 async function spawnVehicle(options) {
@@ -1038,7 +1068,32 @@ async function spawnVehicle(options) {
 	}], ...options.seats ?? []];
 	return await Promise.all(riders.map((r) => seatPlayer(vehicle, r.source, r.seat))), vehicle;
 }
+function nearestVehicleAt(point, metres, filter) {
+	let best = 0, bestDistance = metres;
+	for (let vehicle of GetAllVehicles()) {
+		let [vx = 0, vy = 0, vz = 0] = GetEntityCoords(vehicle), d = Math.hypot(vx - point.x, vy - point.y, vz - point.z);
+		d < bestDistance && (!filter || filter(vehicle)) && ([best, bestDistance] = [vehicle, d]);
+	}
+	return best;
+}
 resourceExport(CORE.resource), createLogger(GetCurrentResourceName());
+const dropped = new Set();
+let listening = !1;
+function onDropped(fn) {
+	listening || (listening = !0, on("playerDropped", () => {
+		let source = Number(globalThis.source);
+		for (let handler of dropped) handler(source);
+	})), dropped.add(fn);
+}
+var PlayerMap = class extends Map {
+	constructor(options = {}) {
+		super(), onDropped((source) => {
+			if (!this.has(source)) return;
+			let value = this.get(source);
+			this.delete(source), options.onDrop?.(source, value);
+		});
+	}
+};
 // ../../../packages/lib/src/server/command.ts
 const resource = GetCurrentResourceName();
 createLogger(resource), new class {
@@ -1066,14 +1121,14 @@ createLogger(resource), new class {
 			if (name === resource) for (let command of this.list) for (let n of command.info.names) emitNet("chat:removeSuggestion", -1, `/${n}`);
 		});
 	}
-}(), createLogger(GetCurrentResourceName()), createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource);
+}(), createLogger(GetCurrentResourceName()), createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/index.ts
 function isOnline(source) {
 	return !!GetPlayerName(String(source));
 }
 // resource/common/locale.ts
-const Locale = createLocale();
-GetCurrentResourceName(), IsDuplicityVersion();
+const Locale = createLocale(), ResourceName = GetCurrentResourceName();
+IsDuplicityVersion();
 // resource/common/rental.ts
 const EVENTS = {
 	rent: "ai-rental:rent",
@@ -1490,34 +1545,24 @@ const MONEY = {
 	]
 }, core = resourceExport("ai-core"), panel = new AdminPanel(rentalSchema);
 migrateLocations(panel);
-const vehicles = () => readVehicles(panel.get("vehicles")), content = {
-	settings: readSettings(panel.get("settings")),
+const vehicles = () => readVehicles(panel.get("vehicles")), settings = panel.view("settings", readSettings), content = {
+	get settings() {
+		return settings.value;
+	},
 	locations: readLocations(panel.get("locations"), vehicles())
 }, readAllLocations = () => content.locations = readLocations(panel.get("locations"), vehicles());
-panel.onChange("settings", () => content.settings = readSettings(panel.get("settings"))), panel.onChange("vehicles", readAllLocations), panel.onChange("locations", readAllLocations), panel.rule("locations", (_key, next) => {
+panel.onChange("vehicles", readAllLocations), panel.onChange("locations", readAllLocations), panel.rule("locations", (_key, next) => {
 	let list = panel.get("vehicles");
 	return (Array.isArray(next.vehicles) ? next.vehicles : []).every((row) => {
 		let key = isRecord(row) ? row.vehicle : void 0;
 		return key === "" || typeof key == "string" && key in list;
 	}) ? null : "ADMIN_ERR_LOOKUP";
 }), aiLogChannels({ rentals: {} });
-const fail = (error) => ({
-	ok: !1,
-	error
-}), posOf = (entity) => {
-	let [x = 0, y = 0, z = 0] = GetEntityCoords(entity);
-	return {
-		x,
-		y,
-		z
-	};
-}, distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z), pedOf = (source) => GetPlayerPed(String(source));
-function spawnBlocked(at) {
-	for (let vehicle of GetAllVehicles()) if (distance(posOf(vehicle), at) < 3) return !0;
-	return !1;
+function condition(vehicle) {
+	return (Math.max(0, Math.min(1e3, GetVehicleEngineHealth(vehicle))) + Math.max(0, Math.min(1e3, GetVehicleBodyHealth(vehicle)))) / 2e3;
 }
 const rentals = new class {
-	active = new Map();
+	active = new PlayerMap({ onDrop: (source, rental) => this.finish(source, rental, !0) });
 	has(source) {
 		return this.active.has(source);
 	}
@@ -1526,12 +1571,12 @@ const rentals = new class {
 		let offer = location.vehicles.find((v) => v.id === vehicleKey);
 		if (!offer) return fail("RENTAL_ERR_GONE");
 		let model = offer.model;
-		if (spawnBlocked(location.spawn)) return fail("RENTAL_ERR_BLOCKED");
+		if (nearestVehicleAt(location.spawn, 3)) return fail("RENTAL_ERR_BLOCKED");
 		let type = await vehicleType(model, source);
 		if (!type || !isOnline(source)) return fail("RENTAL_ERR_GONE");
 		let total = offer.fee + offer.deposit;
 		if (total > 0 && !core.RemoveMoney(source, content.settings.account, total, `rental:${location.id}`)) return fail("RENTAL_ERR_MONEY");
-		let plate = `${content.settings.platePrefix}${Math.floor(Math.random() * 10 ** (8 - content.settings.platePrefix.length))}`.slice(0, 8), vehicle = await spawnVehicle({
+		let plate = randomPlate(content.settings.platePrefix), vehicle = await spawnVehicle({
 			model,
 			type,
 			coords: location.spawn,
@@ -1542,6 +1587,13 @@ const rentals = new class {
 			purpose: "rental"
 		});
 		if (vehicle === null) return total > 0 && core.AddMoney(source, content.settings.account, total, "rental:refund"), fail("RENTAL_ERR_GONE");
+		if (!isOnline(source)) return DeleteEntity(vehicle), aiLog("rentals", "renter left during the spawn", {
+			source,
+			metadata: {
+				location: location.id,
+				plate
+			}
+		}), fail("RENTAL_ERR_GONE");
 		let timer = location.minutes > 0 ? setTimeout(() => this.expire(source), location.minutes * 6e4) : null;
 		return this.active.set(source, {
 			location: location.id,
@@ -1569,20 +1621,23 @@ const rentals = new class {
 		if (!rental) return fail("RENTAL_ERR_NONE");
 		if (!DoesEntityExist(rental.vehicle)) return this.end(source, !1), {
 			ok: !0,
-			refund: 0
+			refund: 0,
+			damaged: !0
 		};
-		if (distance(posOf(rental.vehicle), location.coords) > content.settings.returnRadius) return fail("RENTAL_ERR_BRING");
-		let refund = rental.deposit;
+		if (distance(entityCoords(rental.vehicle), location.coords) > content.settings.returnRadius) return fail("RENTAL_ERR_BRING");
+		let share = condition(rental.vehicle), refund = Math.floor(rental.deposit * share);
 		return this.end(source, !0), refund > 0 && core.AddMoney(source, content.settings.account, refund, "rental:deposit"), aiLog("rentals", "gave a rental back", {
 			source,
 			metadata: {
 				location: location.id,
 				plate: rental.plate,
-				refund
+				refund,
+				deposit: rental.deposit
 			}
 		}), {
 			ok: !0,
-			refund
+			refund,
+			damaged: share < .999
 		};
 	}
 	expire(source) {
@@ -1597,21 +1652,31 @@ const rentals = new class {
 	}
 	end(source, remove) {
 		let rental = this.active.get(source);
-		rental && (this.active.delete(source), rental.timer && clearTimeout(rental.timer), remove && DoesEntityExist(rental.vehicle) && (isOnline(source) && vehicleKeys.remove(source, rental.vehicle), DeleteEntity(rental.vehicle)), isOnline(source) && emitNet(EVENTS.state, source, !1));
+		rental && (this.active.delete(source), this.finish(source, rental, remove));
 	}
-}(), location = (id) => typeof id == "string" ? content.locations.get(id) ?? null : null;
+	finish(source, rental, remove) {
+		rental.timer && clearTimeout(rental.timer), remove && DoesEntityExist(rental.vehicle) && (isOnline(source) && vehicleKeys.remove(source, rental.vehicle), DeleteEntity(rental.vehicle)), isOnline(source) && emitNet(EVENTS.state, source, !1);
+	}
+}();
 onClientCallback(EVENTS.rent, {
-	args: ([id, vehicle]) => typeof id == "string" && typeof vehicle == "string" && /^[a-z0-9_]{1,32}$/.test(vehicle) ? [id, vehicle] : null,
+	args: ([id, vehicle]) => {
+		let at = readText(id, 64);
+		return at !== null && typeof vehicle == "string" && /^[a-z0-9_]{1,32}$/.test(vehicle) ? [at, vehicle] : null;
+	},
+	rate: {
+		count: 2,
+		windowMs: 5e3
+	},
 	lock: !0
 }, async (source, id, vehicle) => {
-	let at = location(id);
-	return !at || distance(posOf(pedOf(source)), at.coords) > 3 ? fail("RENTAL_ERR_FAR") : rentals.rent(source, at, vehicle);
+	let at = content.locations.get(id);
+	return !at || !isNear(source, at.coords, 3) ? fail("RENTAL_ERR_FAR") : rentals.rent(source, at, vehicle);
 }), onClientCallback(EVENTS.giveBack, {
-	args: ([id]) => typeof id == "string" ? [id] : null,
+	args: oneArg((v) => readText(v, 64)),
 	lock: !0
 }, (source, id) => {
-	let at = location(id);
-	return !at || distance(posOf(pedOf(source)), at.coords) > content.settings.returnRadius ? fail("RENTAL_ERR_FAR") : rentals.giveBack(source, at);
-}), on("playerDropped", () => rentals.end(Number(globalThis.source), !0)), on("onResourceStop", (resource) => {
-	resource === GetCurrentResourceName() && rentals.endAll();
+	let at = content.locations.get(id);
+	return !at || !isNear(source, at.coords, content.settings.returnRadius) ? fail("RENTAL_ERR_FAR") : rentals.giveBack(source, at);
+}), on("onResourceStop", (resource) => {
+	resource === ResourceName && rentals.endAll();
 });
