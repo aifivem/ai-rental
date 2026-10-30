@@ -1,4 +1,5 @@
 {
+  "$schema": "./schemas/settings.schema.json",
   "account": "bank",
   "platePrefix": "RNT",
   "returnRadius": 15

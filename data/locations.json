@@ -1,4 +1,5 @@
 {
+  "$schema": "./schemas/locations.schema.json",
   "airport": {
     "label": "LSIA Car Rental",
     "coords": {
@@ -10,7 +11,7 @@
       "x": -1031.45,
       "y": -2729.74,
       "z": 13.37,
-      "heading": 240.0
+      "heading": 240
     },
     "blip": true,
     "minutes": 60,

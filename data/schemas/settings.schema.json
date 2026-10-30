@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-rental/data/settings.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    },
+    "account": {
+      "description": "Paid from: The ai-core account the fee and deposit are taken from and the deposit goes back to.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 32
+    },
+    "platePrefix": {
+      "description": "Plate start: Up to 4 letters in front of the plate number, so rented vehicles are easy to spot.",
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 4,
+      "pattern": "^[A-Za-z]{0,4}$"
+    },
+    "returnRadius": {
+      "description": "Return radius: How close to the counter a rented vehicle must be to give it back.",
+      "type": "number",
+      "minimum": 3,
+      "maximum": 50
+    }
+  },
+  "required": [
+    "account",
+    "platePrefix",
+    "returnRadius"
+  ]
+}

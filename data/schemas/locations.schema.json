@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-rental/data/locations.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    }
+  },
+  "patternProperties": {
+    "^[a-z0-9_]{2,32}$": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "coords": {
+          "description": "Counter: Players rent here (2 m) and give vehicles back around it (return radius in Settings).",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "z"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            }
+          }
+        },
+        "spawn": {
+          "description": "Vehicle spawn: Where and facing which way the rented vehicle appears; the renter sits in it at once.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "z",
+            "heading"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            },
+            "heading": {
+              "type": "number"
+            }
+          }
+        },
+        "blip": {
+          "description": "Map blip",
+          "type": "boolean"
+        },
+        "blipStyle": {
+          "description": "Blip look",
+          "type": "object",
+          "properties": {
+            "sprite": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "color": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 2
+            }
+          },
+          "required": [
+            "sprite",
+            "color",
+            "scale"
+          ]
+        },
+        "minutes": {
+          "description": "Rental time: When it runs out the vehicle disappears and the deposit is kept. 0 = until given back.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "vehicles": {
+          "description": "Vehicles",
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "description": "Model",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z0-9_]{1,32}$"
+              },
+              "label": {
+                "description": "Name",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "fee": {
+                "description": "Fee",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "deposit": {
+                "description": "Deposit",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              }
+            },
+            "required": [
+              "model",
+              "label",
+              "fee",
+              "deposit"
+            ]
+          }
+        }
+      },
+      "required": [
+        "label",
+        "coords",
+        "spawn",
+        "blip",
+        "minutes",
+        "vehicles"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
