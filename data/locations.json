@@ -1,0 +1,44 @@
+{
+  "airport": {
+    "label": "LSIA Car Rental",
+    "coords": {
+      "x": -1026.43,
+      "y": -2735.56,
+      "z": 13.76
+    },
+    "spawn": {
+      "x": -1031.45,
+      "y": -2729.74,
+      "z": 13.37,
+      "heading": 240.0
+    },
+    "blip": true,
+    "minutes": 60,
+    "vehicles": [
+      {
+        "model": "blista",
+        "label": "Dinka Blista",
+        "fee": 150,
+        "deposit": 300
+      },
+      {
+        "model": "asea",
+        "label": "Declasse Asea",
+        "fee": 200,
+        "deposit": 400
+      },
+      {
+        "model": "bison",
+        "label": "Bravado Bison",
+        "fee": 300,
+        "deposit": 600
+      },
+      {
+        "model": "faggio",
+        "label": "Pegassi Faggio",
+        "fee": 80,
+        "deposit": 150
+      }
+    ]
+  }
+}
