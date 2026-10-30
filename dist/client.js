@@ -555,9 +555,11 @@ try{
 		SetBlipScale(blip, options.scale ?? .8);
 		SetBlipDisplay(blip, options.display ?? 4);
 		SetBlipAsShortRange(blip, options.shortRange ?? true);
-		BeginTextCommandSetBlipName(LABEL);
-		AddTextComponentSubstringPlayerName(options.label);
-		EndTextCommandSetBlipName(blip);
+		if (options.label !== void 0) {
+			BeginTextCommandSetBlipName(LABEL);
+			AddTextComponentSubstringPlayerName(options.label);
+			EndTextCommandSetBlipName(blip);
+		}
 		return blip;
 	}
 	/** A script's blips by id: `add` replaces a blip with the same id, `clear` removes them all (a panel rebuild). */
@@ -696,10 +698,23 @@ try{
 		inside = false;
 		ped = null;
 		targetZone = null;
-		shown = false;
+		/** The prompt text on screen, null while hidden. */
+		shown = null;
+		/** The label the target option was registered with. */
+		targetLabel = null;
 		constructor(promptId, options) {
 			this.promptId = promptId;
 			this.options = options;
+		}
+		text() {
+			const { label } = this.options;
+			if (typeof label === "string") return label;
+			try {
+				return label();
+			} catch (error) {
+				log.error("point label failed", error);
+				return "";
+			}
 		}
 		allowed() {
 			try {
@@ -721,18 +736,19 @@ try{
 			busy = true;
 			result.catch((error) => log.error("point onPressed failed", error)).finally(() => busy = false);
 		}
-		/** The prompt follows inside + canShow (prompt mode only). */
-		sync(mode) {
-			const show = mode === "prompt" && this.inside && this.allowed();
-			if (show === this.shown) return;
-			this.shown = show;
-			if (show) showPrompt(this.promptId, this.options.label);
+		/** The prompt follows inside + canShow + the current label (prompt mode only). */
+		sync(group) {
+			const text = (this.options.promptOnly ? "prompt" : group) === "prompt" && this.inside && this.allowed() ? this.text() : null;
+			if (text === this.shown) return;
+			this.shown = text;
+			if (text !== null) showPrompt(this.promptId, text);
 			else hidePrompt(this.promptId);
 		}
 		targetOption() {
+			this.targetLabel = this.text();
 			return [{
 				name: this.promptId,
-				label: this.options.label,
+				label: this.targetLabel,
 				icon: this.options.icon,
 				distance: this.options.radius ?? 2,
 				canInteract: () => this.allowed(),
@@ -768,17 +784,21 @@ try{
 						...options.coords,
 						heading: 0
 					},
-					onSpawn: (entity) => style() === "target" && target("addLocalEntity", entity, point.targetOption()),
-					onDespawn: (entity) => style() === "target" && target("removeLocalEntity", entity, point.promptId)
+					onSpawn: (entity) => style() === "target" && !options.promptOnly && target("addLocalEntity", entity, point.targetOption()),
+					onDespawn: (entity) => style() === "target" && !options.promptOnly && target("removeLocalEntity", entity, point.promptId)
 				});
 			}
 			if (options.blip) this.blips.add(id, {
 				...options.blip,
-				coords: options.coords,
-				label: options.blip.label ?? options.label
+				coords: options.blip.coords ?? options.coords
 			});
 			this.zones.add(id, {
-				shape: {
+				shape: options.height !== void 0 ? {
+					type: "cylinder",
+					center: options.coords,
+					radius: options.radius ?? 2,
+					height: options.height
+				} : {
 					type: "sphere",
 					center: options.coords,
 					radius: options.radius ?? 2
@@ -811,11 +831,20 @@ try{
 		clear() {
 			for (const id of [...this.points.keys()]) this.remove(id);
 		}
-		/** Checks `canShow` again for the points the player is at (prompt mode; targets ask when opened). */
+		/**
+		* Checks `canShow` and a function `label` again (prompt mode; targets ask `canShow` when opened and get a changed
+		* label re-registered). Inside a state bag change handler the new value is not readable yet: call it in a `setTimeout`.
+		*/
 		refresh(id) {
 			const mode = style();
-			if (id !== void 0) this.points.get(id)?.sync(mode);
-			else for (const point of this.points.values()) point.sync(mode);
+			const one = id !== void 0 ? this.points.get(id) : void 0;
+			for (const point of one ? [one] : id === void 0 ? this.points.values() : []) {
+				point.sync(mode);
+				if (mode === "target" && !point.options.promptOnly && typeof point.options.label === "function" && point.targetLabel !== point.text()) {
+					this.detach(point);
+					this.attach(point, mode);
+				}
+			}
 		}
 		isInside(id) {
 			return this.points.get(id)?.inside ?? false;
@@ -830,7 +859,7 @@ try{
 			}
 		}
 		attach(point, mode) {
-			if (mode !== "target") return;
+			if (mode !== "target" || point.options.promptOnly) return;
 			const ped = point.ped?.entity;
 			if (point.ped) {
 				if (ped) target("addLocalEntity", ped, point.targetOption());
@@ -838,7 +867,7 @@ try{
 			}
 			point.targetZone = target("addSphereZone", {
 				coords: point.options.coords,
-				radius: 1,
+				radius: point.options.targetRadius ?? 1,
 				options: point.targetOption()
 			});
 		}

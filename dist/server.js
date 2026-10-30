@@ -861,17 +861,30 @@ const vehicleKeys = {
 };
 
 // ../../../packages/lib/src/server/vehicle.ts
+/** Every type `CreateVehicleServerSetter` takes; a client answering anything else is ignored. */
+const TYPES = /* @__PURE__ */ new Set([
+	"automobile",
+	"bike",
+	"boat",
+	"heli",
+	"plane",
+	"submarine",
+	"trailer",
+	"train"
+]);
 /** Model -> spawn type, learned from clients once per model (the server cannot read a vehicle class). */
 const types = /* @__PURE__ */ new Map();
-/** The `CreateVehicleServerSetter` type of a model asked from a player's client (ai-core answers); null: no such vehicle. */
+/**
+* The `CreateVehicleServerSetter` type of a model asked from a player's client (ai-core answers); null: no such
+* vehicle. Only a valid type is cached: "no such model" is asked again, so one modified client cannot block a model.
+*/
 async function vehicleType(model, asker) {
 	const known = types.get(model);
 	if (known !== void 0) return known;
-	const answer = await triggerClientCallback(CORE.vehicleTypeCallback, asker, [model]).catch(() => void 0);
-	if (answer === void 0) return null;
-	const type = typeof answer === "string" ? answer : null;
-	types.set(model, type);
-	return type;
+	const answer = await triggerClientCallback(CORE.vehicleTypeCallback, asker, [model]).catch(() => null);
+	if (typeof answer !== "string" || !TYPES.has(answer)) return null;
+	types.set(model, answer);
+	return answer;
 }
 /**
 * Creates a networked vehicle on the server (strict entity lockdown) and sets it up in one step: plate, fuel, state
