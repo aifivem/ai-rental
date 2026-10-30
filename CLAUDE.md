@@ -1,6 +1,6 @@
 # ai-rental
 
-Basic vehicle rental: panel-set rental points rent vehicles for a fee and a deposit; the deposit comes back when the vehicle is given back in time. Depends on ai-core (money, menu, prompts, vehicle keys through its key layer); no database. Decisions and test list: `docs/research/ai-rental.md` in the server repo.
+Basic vehicle rental: panel-set rental points rent vehicles for a fee and a deposit; the deposit comes back when the vehicle is given back in time. Depends on ai-core (money, menu, prompts, vehicle keys through its key layer); no database.
 
 ## Decisions
 
