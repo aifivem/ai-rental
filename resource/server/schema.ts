@@ -20,12 +20,17 @@ export const rentalSchema: PanelSchema = {
       kind: "records",
       sync: "all",
       labelPath: "label",
-      newRecord: { label: "", coords: { x: 0, y: 0, z: 0 }, spawn: { x: 0, y: 0, z: 0, heading: 0 }, blip: true, minutes: 60, vehicles: [] },
+      newRecord: { label: "", coords: { x: 0, y: 0, z: 0 }, spawn: { x: 0, y: 0, z: 0, heading: 0 }, blip: true, blipStyle: { sprite: 225, color: 2, scale: 0.7 }, minutes: 60, vehicles: [] },
       sections: {
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
         spawn: { type: "vec4" },
         blip: { type: "bool" },
+        blipStyle: {
+          type: "object",
+          optional: true,
+          fields: { sprite: { type: "number", min: 0, max: 1000, integer: true }, color: { type: "number", min: 0, max: 100, integer: true }, scale: { type: "number", min: 0.3, max: 2 } },
+        },
         minutes: { type: "number", min: 0, max: 1440, integer: true },
         vehicles: {
           type: "list",
@@ -63,6 +68,7 @@ export const rentalSchema: PanelSchema = {
             { widget: "point", path: "coords", label: "ADMIN_F_COORDS", hint: "ADMIN_H_COORDS", ground: true },
             { widget: "point", path: "spawn", label: "ADMIN_F_SPAWN", hint: "ADMIN_H_SPAWN", heading: true, ground: true },
             { widget: "switch", path: "blip", label: "ADMIN_F_BLIP" },
+            { widget: "blip", path: "blipStyle", label: "ADMIN_F_BLIP_STYLE" },
             { widget: "number", path: "minutes", label: "ADMIN_F_MINUTES", hint: "ADMIN_H_MINUTES", min: 0, max: 1440, unit: "min" },
           ],
         },

@@ -51,6 +51,7 @@ export interface Location {
   coords: Point;
   spawn: Vec4;
   blip: boolean;
+  blipStyle: { sprite: number; color: number; scale: number };
   /** How long a rental lasts; 0 = until it is given back. */
   minutes: number;
   vehicles: RentalVehicle[];
@@ -71,6 +72,7 @@ export function readLocations(raw: unknown): Map<string, Location> {
       coords: point(v.coords),
       spawn: vec4(v.spawn, { x: 0, y: 0, z: 0, heading: 0 }),
       blip: bool(v.blip, true),
+      blipStyle: { sprite: int(record(v.blipStyle).sprite, 225, 0, 1000), color: int(record(v.blipStyle).color, 2, 0, 100), scale: num(record(v.blipStyle).scale, 0.7, 0.3, 2) },
       minutes: int(v.minutes, 60, 0, 1440),
       vehicles,
     });

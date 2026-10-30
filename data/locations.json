@@ -39,6 +39,11 @@
         "fee": 80,
         "deposit": 150
       }
-    ]
+    ],
+    "blipStyle": {
+      "sprite": 225,
+      "color": 2,
+      "scale": 0.7
+    }
   }
 }

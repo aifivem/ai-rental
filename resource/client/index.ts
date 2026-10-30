@@ -45,7 +45,7 @@ class Points {
           hidePrompt(back);
         },
       });
-      if (at.blip) this.blip(at.coords, at.label);
+      if (at.blip) this.blip(at.coords, at.label, at.blipStyle);
     }
   }
 
@@ -57,11 +57,11 @@ class Points {
     }
   }
 
-  private blip(center: { x: number; y: number; z: number }, name: string): void {
+  private blip(center: { x: number; y: number; z: number }, name: string, style: { sprite: number; color: number; scale: number }): void {
     const blip = AddBlipForCoord(center.x, center.y, center.z);
-    SetBlipSprite(blip, 225);
-    SetBlipColour(blip, 2);
-    SetBlipScale(blip, 0.7);
+    SetBlipSprite(blip, style.sprite);
+    SetBlipColour(blip, style.color);
+    SetBlipScale(blip, style.scale);
     SetBlipAsShortRange(blip, true);
     BeginTextCommandSetBlipName(BLIP_TEXT);
     AddTextComponentSubstringPlayerName(name);

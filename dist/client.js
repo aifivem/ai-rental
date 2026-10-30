@@ -678,6 +678,11 @@ try{
 					heading: 0
 				}),
 				blip: bool(v.blip, true),
+				blipStyle: {
+					sprite: int(record(v.blipStyle).sprite, 225, 0, 1e3),
+					color: int(record(v.blipStyle).color, 2, 0, 100),
+					scale: num(record(v.blipStyle).scale, .7, .3, 2)
+				},
 				minutes: int(v.minutes, 60, 0, 1440),
 				vehicles
 			});
@@ -742,7 +747,7 @@ try{
 						hidePrompt(back);
 					}
 				});
-				if (at.blip) this.blip(at.coords, at.label);
+				if (at.blip) this.blip(at.coords, at.label, at.blipStyle);
 			}
 		}
 		/** The return prompt shows while renting, in a vehicle, inside a return radius. */
@@ -750,11 +755,11 @@ try{
 			for (const id of this.inside) if (this.renting && cache.vehicle !== false) showPrompt(id, Locale("RENTAL_PROMPT_RETURN"));
 			else hidePrompt(id);
 		}
-		blip(center, name) {
+		blip(center, name, style) {
 			const blip = AddBlipForCoord(center.x, center.y, center.z);
-			SetBlipSprite(blip, 225);
-			SetBlipColour(blip, 2);
-			SetBlipScale(blip, .7);
+			SetBlipSprite(blip, style.sprite);
+			SetBlipColour(blip, style.color);
+			SetBlipScale(blip, style.scale);
 			SetBlipAsShortRange(blip, true);
 			BeginTextCommandSetBlipName(BLIP_TEXT);
 			AddTextComponentSubstringPlayerName(name);

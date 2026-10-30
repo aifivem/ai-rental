@@ -54,5 +54,6 @@
   "RENTAL_ERR_BLOCKED": "Something is parked on the spawn spot.",
   "RENTAL_ERR_MONEY": "You cannot pay the fee and deposit.",
   "RENTAL_ERR_NONE": "You have no rented vehicle.",
-  "RENTAL_ERR_BRING": "Bring the rented vehicle to the counter first."
+  "RENTAL_ERR_BRING": "Bring the rented vehicle to the counter first.",
+  "ADMIN_F_BLIP_STYLE": "Blip look"
 }

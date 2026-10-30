@@ -24971,6 +24971,11 @@ function readLocations(raw) {
 				heading: 0
 			}),
 			blip: bool(v.blip, true),
+			blipStyle: {
+				sprite: int(record(v.blipStyle).sprite, 225, 0, 1e3),
+				color: int(record(v.blipStyle).color, 2, 0, 100),
+				scale: num(record(v.blipStyle).scale, .7, .3, 2)
+			},
 			minutes: int(v.minutes, 60, 0, 1440),
 			vehicles
 		});
@@ -25026,6 +25031,11 @@ const rentalSchema = {
 					heading: 0
 				},
 				blip: true,
+				blipStyle: {
+					sprite: 225,
+					color: 2,
+					scale: .7
+				},
 				minutes: 60,
 				vehicles: []
 			},
@@ -25038,6 +25048,29 @@ const rentalSchema = {
 				coords: { type: "vec3" },
 				spawn: { type: "vec4" },
 				blip: { type: "bool" },
+				blipStyle: {
+					type: "object",
+					optional: true,
+					fields: {
+						sprite: {
+							type: "number",
+							min: 0,
+							max: 1e3,
+							integer: true
+						},
+						color: {
+							type: "number",
+							min: 0,
+							max: 100,
+							integer: true
+						},
+						scale: {
+							type: "number",
+							min: .3,
+							max: 2
+						}
+					}
+				},
 				minutes: {
 					type: "number",
 					min: 0,
@@ -25119,6 +25152,11 @@ const rentalSchema = {
 					widget: "switch",
 					path: "blip",
 					label: "ADMIN_F_BLIP"
+				},
+				{
+					widget: "blip",
+					path: "blipStyle",
+					label: "ADMIN_F_BLIP_STYLE"
 				},
 				{
 					widget: "number",
