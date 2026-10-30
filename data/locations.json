@@ -17,28 +17,16 @@
     "minutes": 60,
     "vehicles": [
       {
-        "model": "blista",
-        "label": "Dinka Blista",
-        "fee": 150,
-        "deposit": 300
+        "vehicle": "blista"
       },
       {
-        "model": "asea",
-        "label": "Declasse Asea",
-        "fee": 200,
-        "deposit": 400
+        "vehicle": "asea"
       },
       {
-        "model": "bison",
-        "label": "Bravado Bison",
-        "fee": 300,
-        "deposit": 600
+        "vehicle": "bison"
       },
       {
-        "model": "faggio",
-        "label": "Pegassi Faggio",
-        "fee": 80,
-        "deposit": 150
+        "vehicle": "faggio"
       }
     ],
     "blipStyle": {

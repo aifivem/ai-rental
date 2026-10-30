@@ -11,13 +11,20 @@ import {
 } from "@aicore-fivem/lib/client";
 import { record } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
-import { EVENTS, readLocations, readSettings } from "common/rental";
+import {
+  EVENTS,
+  readLocations,
+  readSettings,
+  readVehicles,
+} from "common/rental";
 
-const world = new AdminWorld(["settings", "locations"]);
+const world = new AdminWorld(["settings", "vehicles", "locations"]);
 const texts = loadLocaleTexts();
+const readAllLocations = () =>
+  readLocations(world.get("locations"), readVehicles(world.get("vehicles")));
 const content = {
   settings: readSettings(world.get("settings")),
-  locations: readLocations(world.get("locations")),
+  locations: readAllLocations(),
 };
 const errorText = (v: unknown, fallback: string): string => {
   const key =
@@ -58,10 +65,12 @@ world.onChange("settings", () => {
   content.settings = readSettings(world.get("settings"));
   rebuild();
 });
-world.onChange("locations", () => {
-  content.locations = readLocations(world.get("locations"));
+const locationsChanged = () => {
+  content.locations = readAllLocations();
   rebuild();
-});
+};
+world.onChange("vehicles", locationsChanged);
+world.onChange("locations", locationsChanged);
 onServerEvent(
   EVENTS.state,
   { args: ([active]) => (typeof active === "boolean" ? [active] : null) },
@@ -83,7 +92,7 @@ async function rent(id: string): Promise<void> {
   const pick = await menu({
     title: at.label,
     items: at.vehicles.map((v) => ({
-      id: v.model,
+      id: v.id,
       label: v.label,
       icon: "car",
       description: Locale("RENTAL_OFFER", v.fee, v.deposit, duration),

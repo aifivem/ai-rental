@@ -1,0 +1,27 @@
+{
+  "$schema": "./schemas/vehicles.schema.json",
+  "blista": {
+    "model": "blista",
+    "label": "Dinka Blista",
+    "fee": 150,
+    "deposit": 300
+  },
+  "asea": {
+    "model": "asea",
+    "label": "Declasse Asea",
+    "fee": 200,
+    "deposit": 400
+  },
+  "bison": {
+    "model": "bison",
+    "label": "Bravado Bison",
+    "fee": 300,
+    "deposit": 600
+  },
+  "faggio": {
+    "model": "faggio",
+    "label": "Pegassi Faggio",
+    "fee": 80,
+    "deposit": 150
+  }
+}

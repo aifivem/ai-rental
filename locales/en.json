@@ -1,7 +1,7 @@
 {
   "ADMIN_TITLE": "Vehicle rental",
   "ADMIN_TAB_LOCATIONS": "Rental points",
-  "ADMIN_TAB_LOCATIONS_DESC": "Where players rent vehicles, what they can rent and for how long.",
+  "ADMIN_TAB_LOCATIONS_DESC": "Where players rent vehicles, which vehicles of the list they can rent there and for how long.",
   "ADMIN_NEW_LOCATION": "New rental point",
   "ADMIN_DELETE_LOCATION": "Delete rental point",
   "ADMIN_DELETE_LOCATION_DESC": "The point, its blip and its vehicle list go. Vehicles rented there now stay until they are given back or their time ends.",
@@ -17,7 +17,7 @@
   "ADMIN_F_MINUTES": "Rental time",
   "ADMIN_H_MINUTES": "When it runs out the vehicle disappears and the deposit is kept. 0 = until given back.",
   "ADMIN_C_VEHICLES": "Vehicles",
-  "ADMIN_C_VEHICLES_DESC": "What this point rents out. The fee is paid once, the deposit comes back when the vehicle is returned in time.",
+  "ADMIN_C_VEHICLES_DESC": "Vehicles of the vehicle list this point rents out; fee and deposit are set in the Vehicles tab.",
   "ADMIN_F_VEHICLES": "Vehicles",
   "ADMIN_ADD_VEHICLE": "Add vehicle",
   "ADMIN_F_MODEL": "Model",
@@ -55,5 +55,18 @@
   "RENTAL_ERR_MONEY": "You cannot pay the fee and deposit.",
   "RENTAL_ERR_NONE": "You have no rented vehicle.",
   "RENTAL_ERR_BRING": "Bring the rented vehicle to the counter first.",
-  "ADMIN_F_BLIP_STYLE": "Blip look"
+  "ADMIN_F_BLIP_STYLE": "Blip look",
+  "ADMIN_F_VEHICLE": "Vehicle",
+  "ADMIN_P_VEHICLE": "Pick from the vehicle list",
+  "ADMIN_TAB_VEHICLES": "Vehicles",
+  "ADMIN_TAB_VEHICLES_DESC": "Every vehicle that can be rented, with its name, fee and deposit; rental points pick from this list.",
+  "ADMIN_NEW_VEHICLE": "New vehicle",
+  "ADMIN_DELETE_VEHICLE": "Delete vehicle",
+  "ADMIN_DELETE_VEHICLE_DESC": "The vehicle leaves the list and every rental point that offered it. Vehicles rented now stay until they are given back or their time ends.",
+  "ADMIN_C_VEHICLE": "Vehicle",
+  "ADMIN_C_VEHICLE_DESC": "What players see in the rental menu and what they pay. The fee is paid once, the deposit comes back when the vehicle is returned in time.",
+  "ADMIN_H_MODEL": "The game's model name of the vehicle (addon vehicles too).",
+  "ADMIN_H_VEHICLE_LABEL": "The name in the rental menu.",
+  "ADMIN_H_FEE": "Paid when renting, never given back.",
+  "ADMIN_H_DEPOSIT": "Paid when renting, given back when the vehicle is returned in time."
 }

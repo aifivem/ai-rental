@@ -5,7 +5,7 @@
   "description": "Basic vehicle rental: panel-set rental points, fee and deposit, keys and fuel through ai-core",
   "license": "GPL-3.0-only",
   "author": {
-    "name": "ai-core"
+    "name": "TGIANN"
   },
   "repository": "github:TGIANN/ai-rental",
   "type": "module",
@@ -39,6 +39,7 @@
   },
   "fxFiles": [
     "data/settings.json",
+    "data/vehicles.json",
     "data/locations.json"
   ]
 }

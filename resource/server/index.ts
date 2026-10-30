@@ -10,30 +10,46 @@ import {
   vehicleKeys,
   vehicleType,
 } from "@aicore-fivem/lib/server";
+import { isRecord } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import {
   EVENTS,
   readLocations,
   readSettings,
+  readVehicles,
   type Location,
 } from "common/rental";
+import { migrateLocations } from "./migrate";
 import { rentalSchema } from "./schema";
 
 const core = resourceExport("ai-core");
 const panel = new AdminPanel(rentalSchema);
+migrateLocations(panel);
+const vehicles = () => readVehicles(panel.get("vehicles"));
 /** Panel content, parsed again after every change. */
 const content = {
   settings: readSettings(panel.get("settings")),
-  locations: readLocations(panel.get("locations")),
+  locations: readLocations(panel.get("locations"), vehicles()),
 };
+const readAllLocations = () =>
+  (content.locations = readLocations(panel.get("locations"), vehicles()));
 panel.onChange(
   "settings",
   () => (content.settings = readSettings(panel.get("settings"))),
 );
-panel.onChange(
-  "locations",
-  () => (content.locations = readLocations(panel.get("locations"))),
-);
+panel.onChange("vehicles", readAllLocations);
+panel.onChange("locations", readAllLocations);
+// A rental point's vehicle rows name records of the vehicle list ("" = a row not picked yet).
+panel.rule("locations", (_key, next) => {
+  const list = panel.get<Record<string, unknown>>("vehicles");
+  const rows: unknown[] = Array.isArray(next.vehicles) ? next.vehicles : [];
+  return rows.every((row) => {
+    const key = isRecord(row) ? row.vehicle : undefined;
+    return key === "" || (typeof key === "string" && key in list);
+  })
+    ? null
+    : "ADMIN_ERR_LOOKUP";
+});
 aiLogChannels({ rentals: {} });
 
 type Vec = { x: number; y: number; z: number };
@@ -72,13 +88,14 @@ class Rentals {
   async rent(
     source: number,
     location: Location,
-    model: string,
+    vehicleKey: string,
   ): Promise<
     { ok: true; plate: string; minutes: number } | ReturnType<typeof fail>
   > {
     if (this.active.has(source)) return fail("RENTAL_ERR_ACTIVE");
-    const offer = location.vehicles.find((v) => v.model === model);
+    const offer = location.vehicles.find((v) => v.id === vehicleKey);
     if (!offer) return fail("RENTAL_ERR_GONE");
+    const model = offer.model;
     if (spawnBlocked(location.spawn)) return fail("RENTAL_ERR_BLOCKED");
     const type = await vehicleType(model, source);
     if (!type || !isOnline(source)) return fail("RENTAL_ERR_GONE");
@@ -131,6 +148,7 @@ class Rentals {
       source,
       metadata: {
         location: location.id,
+        vehicle: offer.id,
         plate,
         fee: offer.fee,
         deposit: offer.deposit,
@@ -205,19 +223,19 @@ const location = (id: unknown): Location | null =>
 onClientCallback(
   EVENTS.rent,
   {
-    args: ([id, model]): [string, string] | null =>
+    args: ([id, vehicle]): [string, string] | null =>
       typeof id === "string" &&
-      typeof model === "string" &&
-      /^[a-z0-9_]{1,32}$/.test(model)
-        ? [id, model]
+      typeof vehicle === "string" &&
+      /^[a-z0-9_]{1,32}$/.test(vehicle)
+        ? [id, vehicle]
         : null,
     lock: true,
   },
-  async (source, id, model) => {
+  async (source, id, vehicle) => {
     const at = location(id);
     if (!at || distance(posOf(pedOf(source)), at.coords) > 3)
       return fail("RENTAL_ERR_FAR");
-    return rentals.rent(source, at, model);
+    return rentals.rent(source, at, vehicle);
   },
 );
 

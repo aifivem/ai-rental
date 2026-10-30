@@ -1,5 +1,5 @@
 name 'ai-rental'
-author 'ai-core'
+author 'TGIANN'
 version '0.1.0'
 license 'GPL-3.0-only'
 description 'Basic vehicle rental: panel-set rental points, fee and deposit, keys and fuel through ai-core'
@@ -20,5 +20,6 @@ dependencies {
 files {
 	'locales/*.json',
 	'data/settings.json',
+	'data/vehicles.json',
 	'data/locations.json',
 }

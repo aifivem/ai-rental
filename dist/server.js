@@ -406,7 +406,7 @@ function toPatch(value) {
 		default: return null;
 	}
 }
-const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$8 = resourceExport(CORE.resource), ERR = {
+const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$9 = resourceExport(CORE.resource), ERR = {
 	type: "ADMIN_ERR_TYPE",
 	range: "ADMIN_ERR_RANGE",
 	length: "ADMIN_ERR_LENGTH",
@@ -420,7 +420,7 @@ const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(va
 		if (cached && Date.now() - cached.at < 2e3) return cached.values.size > 0 ? cached.values : null;
 		let list = [];
 		try {
-			list = core$8.GetLookupValues(source);
+			list = core$9.GetLookupValues(source);
 		} catch {}
 		let values = new Set(Array.isArray(list) ? list.filter((v) => typeof v == "string") : []);
 		return this.lists.set(source, {
@@ -622,7 +622,7 @@ function writeSchema(resource, name, text, log) {
 	(0, node_fs_promises.mkdir)(dir, { recursive: !0 }).then(() => (0, node_fs_promises.writeFile)(`${dir}/${name}.schema.json`, text, "utf8")).catch((error) => log.error(`writing ${resource}/${path} failed`, error));
 }
 // ../../../packages/lib/src/server/admin/panel.ts
-const core$7 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
+const core$8 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
 function imported(spec, value) {
 	let base = clone(spec.newRecord ?? {}), out = {};
 	for (let name of Object.keys(spec.sections)) {
@@ -643,7 +643,7 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$7.RegisterAdminPanel(this.resource));
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$8.RegisterAdminPanel(this.resource));
 	}
 	get(file) {
 		return this.data.get(file) ?? {};
@@ -736,7 +736,7 @@ var AdminPanel = class {
 		let spec = this.schema.files[file], data = this.get(file), value = key === void 0 ? data : data[key] ?? null;
 		this.dataFiles.get(file)?.write(data);
 		for (let handler of this.handlers.get(file) ?? []) handler(key, value);
-		if (core$7.AdminPanelChanged({
+		if (core$8.AdminPanelChanged({
 			resource: this.resource,
 			file,
 			key,
@@ -775,7 +775,7 @@ function notify(source, text, kind = "info", duration) {
 }
 resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/online.ts
-const core$5 = resourceExport(CORE.resource);
+const core$6 = resourceExport(CORE.resource);
 var OnlinePlayers = class {
 	players = new Map();
 	onDuty = new Map();
@@ -784,7 +784,7 @@ var OnlinePlayers = class {
 		if (this.started) return;
 		this.started = !0;
 		let load = (source, character) => {
-			this.put(source, character, (core$5.GetJobs(source) ?? []).map((m) => m.job), (core$5.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$5.GetDutyJob(source));
+			this.put(source, character, (core$6.GetJobs(source) ?? []).map((m) => m.job), (core$6.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$6.GetDutyJob(source));
 		};
 		on(CORE.playerLoadedEvent, load), on(CORE.playerUnloadedEvent, (source) => this.drop(source)), on(CORE.jobsChangedEvent, (source, jobs) => {
 			let player = this.players.get(source);
@@ -793,8 +793,8 @@ var OnlinePlayers = class {
 			let player = this.players.get(source);
 			player && (player.gangs = gangs.map((m) => m.gang));
 		}), on(CORE.dutyChangedEvent, (source, job) => this.setDuty(source, job));
-		for (let source of core$5.GetLoadedSources()) {
-			let character = core$5.GetCharacter(source);
+		for (let source of core$6.GetLoadedSources()) {
+			let character = core$6.GetCharacter(source);
 			character && load(source, character);
 		}
 	}
@@ -840,10 +840,10 @@ var OnlinePlayers = class {
 const EMPTY = new Set();
 new OnlinePlayers();
 // ../../../packages/lib/src/server/vehicleKeys.ts
-const core$4 = resourceExport(CORE.resource), vehicleKeys = {
-	give: (source, vehicle, purpose = "temporary") => core$4.GiveVehicleKeys(source, vehicle, purpose),
-	remove: (source, vehicle) => core$4.RemoveVehicleKeys(source, vehicle),
-	has: (source, vehicle) => core$4.HasVehicleKeys(source, vehicle)
+const core$5 = resourceExport(CORE.resource), vehicleKeys = {
+	give: (source, vehicle, purpose = "temporary") => core$5.GiveVehicleKeys(source, vehicle, purpose),
+	remove: (source, vehicle) => core$5.RemoveVehicleKeys(source, vehicle),
+	has: (source, vehicle) => core$5.HasVehicleKeys(source, vehicle)
 }, TYPES = new Set([
 	"automobile",
 	"bike",
@@ -921,7 +921,7 @@ createLogger(resource), new class {
 			if (name === resource) for (let command of this.list) for (let n of command.info.names) emitNet("chat:removeSuggestion", -1, `/${n}`);
 		});
 	}
-}(), createLogger(GetCurrentResourceName()), createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource);
+}(), createLogger(GetCurrentResourceName()), createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/index.ts
 function isOnline(source) {
 	return !!GetPlayerName(String(source));
@@ -941,7 +941,7 @@ const EVENTS = {
 		y: num(p.y, 0),
 		z: num(p.z, 0)
 	};
-}, list = (v) => Array.isArray(v) ? v.map(record) : [];
+}, rows = (v) => Array.isArray(v) ? v.map(record) : [];
 function readSettings(raw) {
 	let v = record(raw);
 	return {
@@ -950,15 +950,27 @@ function readSettings(raw) {
 		returnRadius: num(v.returnRadius, 15, 3, 50)
 	};
 }
-function readLocations(raw) {
+function readVehicles(raw) {
 	let out = new Map();
 	for (let [id, value] of Object.entries(record(raw))) {
-		let v = record(value), vehicles = list(v.vehicles).flatMap((row) => typeof row.model == "string" && row.model ? [{
-			model: row.model.toLowerCase(),
-			label: str(row.label, row.model, 48),
-			fee: int(row.fee, 0, 0),
-			deposit: int(row.deposit, 0, 0)
-		}] : []);
+		let v = record(value);
+		typeof v.model == "string" && v.model && out.set(id, {
+			id,
+			model: v.model.toLowerCase(),
+			label: str(v.label, v.model, 48),
+			fee: int(v.fee, 0, 0),
+			deposit: int(v.deposit, 0, 0)
+		});
+	}
+	return out;
+}
+function readLocations(raw, list) {
+	let out = new Map();
+	for (let [id, value] of Object.entries(record(raw))) {
+		let v = record(value), vehicles = rows(v.vehicles).flatMap((row) => {
+			let found = typeof row.vehicle == "string" ? list.get(row.vehicle) : void 0;
+			return found ? [found] : [];
+		});
 		out.set(id, {
 			ped: readPlacePed(v.ped),
 			id,
@@ -982,8 +994,46 @@ function readLocations(raw) {
 	}
 	return out;
 }
+// resource/server/migrate.ts
+function keyFor(vehicles, offer) {
+	let base = offer.model.replace(/[^a-z0-9_]/g, "_").padEnd(2, "_");
+	for (let n = 1;; n++) {
+		let key = n === 1 ? base.slice(0, 32) : `${base.slice(0, 28)}_${n}`, found = vehicles[key];
+		if (found === void 0) return key;
+		let v = record(found);
+		if (v.model === offer.model && v.label === offer.label && v.fee === offer.fee && v.deposit === offer.deposit) return key;
+	}
+}
+function migrateLocations(panel) {
+	let vehicles = { ...panel.get("vehicles") }, locations = panel.get("locations");
+	for (let [id, raw] of Object.entries(locations)) {
+		let location = record(raw), rows = Array.isArray(location.vehicles) ? location.vehicles : [];
+		if (!rows.some((row) => typeof record(row).model == "string")) continue;
+		let refs = rows.flatMap((row) => {
+			let r = record(row);
+			if (typeof r.vehicle == "string") return [{ vehicle: r.vehicle }];
+			if (typeof r.model != "string" || !r.model) return [];
+			let model = r.model.toLowerCase(), offer = {
+				model,
+				label: str(r.label, model, 48),
+				fee: int(r.fee, 0, 0, 1e6),
+				deposit: int(r.deposit, 0, 0, 1e6)
+			}, key = keyFor(vehicles, offer);
+			return key in vehicles || (vehicles[key] = offer, panel.commit("vehicles", key, offer)), [{ vehicle: key }];
+		});
+		panel.commit("locations", id, {
+			...location,
+			vehicles: refs
+		});
+	}
+}
 // resource/server/schema.ts
-const rentalSchema = {
+const MONEY = {
+	type: "number",
+	min: 0,
+	max: 1e6,
+	integer: !0
+}, rentalSchema = {
 	title: "ADMIN_TITLE",
 	icon: "car",
 	files: {
@@ -1008,6 +1058,32 @@ const rentalSchema = {
 					min: 3,
 					max: 50
 				}
+			}
+		},
+		vehicles: {
+			kind: "records",
+			sync: "all",
+			labelPath: "label",
+			newRecord: {
+				model: "blista",
+				label: "",
+				fee: 150,
+				deposit: 300
+			},
+			sections: {
+				model: {
+					type: "text",
+					min: 1,
+					max: 32,
+					pattern: "^[a-z0-9_]{1,32}$"
+				},
+				label: {
+					type: "text",
+					min: 1,
+					max: 48
+				},
+				fee: MONEY,
+				deposit: MONEY
 			}
 		},
 		locations: {
@@ -1080,193 +1156,206 @@ const rentalSchema = {
 					max: 30,
 					of: {
 						type: "object",
-						fields: {
-							model: {
-								type: "text",
-								min: 1,
-								max: 32,
-								pattern: "^[a-z0-9_]{1,32}$"
-							},
-							label: {
-								type: "text",
-								min: 1,
-								max: 48
-							},
-							fee: {
-								type: "number",
-								min: 0,
-								max: 1e6,
-								integer: !0
-							},
-							deposit: {
-								type: "number",
-								min: 0,
-								max: 1e6,
-								integer: !0
-							}
-						}
+						fields: { vehicle: {
+							type: "text",
+							min: 0,
+							max: 32,
+							records: "vehicles"
+						} }
 					}
 				}
 			}
 		}
 	},
-	tabs: [{
-		id: "locations",
-		file: "locations",
-		icon: "car",
-		label: "ADMIN_TAB_LOCATIONS",
-		desc: "ADMIN_TAB_LOCATIONS_DESC",
-		createLabel: "ADMIN_NEW_LOCATION",
-		deleteLabel: "ADMIN_DELETE_LOCATION",
-		deleteDesc: "ADMIN_DELETE_LOCATION_DESC",
-		cards: [
-			{
-				icon: "location-dot",
-				title: "ADMIN_C_LOCATION",
-				desc: "ADMIN_C_LOCATION_DESC",
-				fields: [
-					{
-						widget: "text",
-						path: "label",
-						suggest: { from: "coords" },
-						label: "ADMIN_F_LABEL",
-						placeholder: "ADMIN_P_LABEL"
-					},
-					{
-						widget: "point",
-						path: "coords",
-						label: "ADMIN_F_COORDS",
-						hint: "ADMIN_H_COORDS",
-						ground: !0
-					},
-					{
-						widget: "point",
-						path: "spawn",
-						label: "ADMIN_F_SPAWN",
-						hint: "ADMIN_H_SPAWN",
-						heading: !0,
-						ground: !0
-					},
-					{
-						widget: "switch",
-						path: "blip",
-						label: "ADMIN_F_BLIP"
-					},
-					{
-						widget: "blip",
-						path: "blipStyle",
-						label: "ADMIN_F_BLIP_STYLE"
-					},
-					{
-						widget: "number",
-						path: "minutes",
-						label: "ADMIN_F_MINUTES",
-						hint: "ADMIN_H_MINUTES",
-						min: 0,
-						max: 1440,
-						unit: "min"
-					}
-				]
-			},
-			{
-				icon: "car-side",
-				title: "ADMIN_C_VEHICLES",
-				desc: "ADMIN_C_VEHICLES_DESC",
-				fields: [{
-					widget: "list",
-					path: "vehicles",
-					label: "ADMIN_F_VEHICLES",
-					addLabel: "ADMIN_ADD_VEHICLE",
-					max: 30,
-					newRow: {
-						model: "blista",
-						label: "Blista",
-						fee: 150,
-						deposit: 300
-					},
-					rows: [
-						{
-							widget: "text",
-							path: "model",
-							label: "ADMIN_F_MODEL",
-							placeholder: "ADMIN_P_MODEL"
-						},
+	tabs: [
+		{
+			id: "locations",
+			file: "locations",
+			icon: "car",
+			label: "ADMIN_TAB_LOCATIONS",
+			desc: "ADMIN_TAB_LOCATIONS_DESC",
+			createLabel: "ADMIN_NEW_LOCATION",
+			deleteLabel: "ADMIN_DELETE_LOCATION",
+			deleteDesc: "ADMIN_DELETE_LOCATION_DESC",
+			cards: [
+				{
+					icon: "location-dot",
+					title: "ADMIN_C_LOCATION",
+					desc: "ADMIN_C_LOCATION_DESC",
+					fields: [
 						{
 							widget: "text",
 							path: "label",
 							suggest: { from: "coords" },
-							label: "ADMIN_F_VEHICLE_LABEL",
-							placeholder: "ADMIN_P_VEHICLE_LABEL"
+							label: "ADMIN_F_LABEL",
+							placeholder: "ADMIN_P_LABEL"
+						},
+						{
+							widget: "point",
+							path: "coords",
+							label: "ADMIN_F_COORDS",
+							hint: "ADMIN_H_COORDS",
+							ground: !0
+						},
+						{
+							widget: "point",
+							path: "spawn",
+							label: "ADMIN_F_SPAWN",
+							hint: "ADMIN_H_SPAWN",
+							heading: !0,
+							ground: !0
+						},
+						{
+							widget: "switch",
+							path: "blip",
+							label: "ADMIN_F_BLIP"
+						},
+						{
+							widget: "blip",
+							path: "blipStyle",
+							label: "ADMIN_F_BLIP_STYLE"
 						},
 						{
 							widget: "number",
-							path: "fee",
-							label: "ADMIN_F_FEE",
+							path: "minutes",
+							label: "ADMIN_F_MINUTES",
+							hint: "ADMIN_H_MINUTES",
 							min: 0,
-							max: 1e6,
-							unit: "$"
-						},
-						{
-							widget: "number",
-							path: "deposit",
-							label: "ADMIN_F_DEPOSIT",
-							min: 0,
-							max: 1e6,
-							unit: "$"
+							max: 1440,
+							unit: "min"
 						}
 					]
-				}]
-			},
-			{
-				icon: "user",
-				title: "ADMIN_C_PED",
-				desc: "ADMIN_C_PED_DESC",
-				fields: placePedFields()
-			}
-		]
-	}, {
-		id: "settings",
-		file: "settings",
-		icon: "sliders",
-		label: "ADMIN_TAB_SETTINGS",
-		desc: "ADMIN_TAB_SETTINGS_DESC",
-		cards: [{
-			icon: "sliders",
-			title: "ADMIN_C_SETTINGS",
-			desc: "ADMIN_C_SETTINGS_DESC",
-			fields: [
-				{
-					widget: "text",
-					lookup: "account",
-					path: "account",
-					label: "ADMIN_F_ACCOUNT",
-					hint: "ADMIN_H_ACCOUNT",
-					placeholder: "ADMIN_P_ACCOUNT"
 				},
 				{
-					widget: "text",
-					path: "platePrefix",
-					label: "ADMIN_F_PLATE_PREFIX",
-					hint: "ADMIN_H_PLATE_PREFIX",
-					placeholder: "RNT"
+					icon: "car-side",
+					title: "ADMIN_C_VEHICLES",
+					desc: "ADMIN_C_VEHICLES_DESC",
+					fields: [{
+						widget: "list",
+						path: "vehicles",
+						label: "ADMIN_F_VEHICLES",
+						addLabel: "ADMIN_ADD_VEHICLE",
+						max: 30,
+						newRow: { vehicle: "" },
+						rows: [{
+							widget: "text",
+							path: "vehicle",
+							records: "vehicles",
+							label: "ADMIN_F_VEHICLE",
+							placeholder: "ADMIN_P_VEHICLE"
+						}]
+					}]
 				},
 				{
-					widget: "number",
-					path: "returnRadius",
-					label: "ADMIN_F_RETURN_RADIUS",
-					hint: "ADMIN_H_RETURN_RADIUS",
-					min: 3,
-					max: 50,
-					unit: "m"
+					icon: "user",
+					title: "ADMIN_C_PED",
+					desc: "ADMIN_C_PED_DESC",
+					fields: placePedFields()
 				}
 			]
-		}]
-	}]
-}, core = resourceExport("ai-core"), panel = new AdminPanel(rentalSchema), content = {
+		},
+		{
+			id: "vehicles",
+			file: "vehicles",
+			icon: "car-side",
+			label: "ADMIN_TAB_VEHICLES",
+			desc: "ADMIN_TAB_VEHICLES_DESC",
+			createLabel: "ADMIN_NEW_VEHICLE",
+			deleteLabel: "ADMIN_DELETE_VEHICLE",
+			deleteDesc: "ADMIN_DELETE_VEHICLE_DESC",
+			cards: [{
+				icon: "car-side",
+				title: "ADMIN_C_VEHICLE",
+				desc: "ADMIN_C_VEHICLE_DESC",
+				fields: [
+					{
+						widget: "model",
+						kind: "vehicle",
+						path: "model",
+						label: "ADMIN_F_MODEL",
+						hint: "ADMIN_H_MODEL",
+						placeholder: "ADMIN_P_MODEL"
+					},
+					{
+						widget: "text",
+						path: "label",
+						label: "ADMIN_F_VEHICLE_LABEL",
+						hint: "ADMIN_H_VEHICLE_LABEL",
+						placeholder: "ADMIN_P_VEHICLE_LABEL"
+					},
+					{
+						widget: "number",
+						path: "fee",
+						label: "ADMIN_F_FEE",
+						hint: "ADMIN_H_FEE",
+						min: 0,
+						max: 1e6,
+						unit: "$"
+					},
+					{
+						widget: "number",
+						path: "deposit",
+						label: "ADMIN_F_DEPOSIT",
+						hint: "ADMIN_H_DEPOSIT",
+						min: 0,
+						max: 1e6,
+						unit: "$"
+					}
+				]
+			}]
+		},
+		{
+			id: "settings",
+			file: "settings",
+			icon: "sliders",
+			label: "ADMIN_TAB_SETTINGS",
+			desc: "ADMIN_TAB_SETTINGS_DESC",
+			cards: [{
+				icon: "sliders",
+				title: "ADMIN_C_SETTINGS",
+				desc: "ADMIN_C_SETTINGS_DESC",
+				fields: [
+					{
+						widget: "text",
+						lookup: "account",
+						path: "account",
+						label: "ADMIN_F_ACCOUNT",
+						hint: "ADMIN_H_ACCOUNT",
+						placeholder: "ADMIN_P_ACCOUNT"
+					},
+					{
+						widget: "text",
+						path: "platePrefix",
+						label: "ADMIN_F_PLATE_PREFIX",
+						hint: "ADMIN_H_PLATE_PREFIX",
+						placeholder: "RNT"
+					},
+					{
+						widget: "number",
+						path: "returnRadius",
+						label: "ADMIN_F_RETURN_RADIUS",
+						hint: "ADMIN_H_RETURN_RADIUS",
+						min: 3,
+						max: 50,
+						unit: "m"
+					}
+				]
+			}]
+		}
+	]
+}, core = resourceExport("ai-core"), panel = new AdminPanel(rentalSchema);
+migrateLocations(panel);
+const vehicles = () => readVehicles(panel.get("vehicles")), content = {
 	settings: readSettings(panel.get("settings")),
-	locations: readLocations(panel.get("locations"))
-};
-panel.onChange("settings", () => content.settings = readSettings(panel.get("settings"))), panel.onChange("locations", () => content.locations = readLocations(panel.get("locations"))), aiLogChannels({ rentals: {} });
+	locations: readLocations(panel.get("locations"), vehicles())
+}, readAllLocations = () => content.locations = readLocations(panel.get("locations"), vehicles());
+panel.onChange("settings", () => content.settings = readSettings(panel.get("settings"))), panel.onChange("vehicles", readAllLocations), panel.onChange("locations", readAllLocations), panel.rule("locations", (_key, next) => {
+	let list = panel.get("vehicles");
+	return (Array.isArray(next.vehicles) ? next.vehicles : []).every((row) => {
+		let key = isRecord(row) ? row.vehicle : void 0;
+		return key === "" || typeof key == "string" && key in list;
+	}) ? null : "ADMIN_ERR_LOOKUP";
+}), aiLogChannels({ rentals: {} });
 const fail = (error) => ({
 	ok: !1,
 	error
@@ -1287,10 +1376,11 @@ const rentals = new class {
 	has(source) {
 		return this.active.has(source);
 	}
-	async rent(source, location, model) {
+	async rent(source, location, vehicleKey) {
 		if (this.active.has(source)) return fail("RENTAL_ERR_ACTIVE");
-		let offer = location.vehicles.find((v) => v.model === model);
+		let offer = location.vehicles.find((v) => v.id === vehicleKey);
 		if (!offer) return fail("RENTAL_ERR_GONE");
+		let model = offer.model;
 		if (spawnBlocked(location.spawn)) return fail("RENTAL_ERR_BLOCKED");
 		let type = await vehicleType(model, source);
 		if (!type || !isOnline(source)) return fail("RENTAL_ERR_GONE");
@@ -1318,6 +1408,7 @@ const rentals = new class {
 			source,
 			metadata: {
 				location: location.id,
+				vehicle: offer.id,
 				plate,
 				fee: offer.fee,
 				deposit: offer.deposit
@@ -1365,11 +1456,11 @@ const rentals = new class {
 	}
 }(), location = (id) => typeof id == "string" ? content.locations.get(id) ?? null : null;
 onClientCallback(EVENTS.rent, {
-	args: ([id, model]) => typeof id == "string" && typeof model == "string" && /^[a-z0-9_]{1,32}$/.test(model) ? [id, model] : null,
+	args: ([id, vehicle]) => typeof id == "string" && typeof vehicle == "string" && /^[a-z0-9_]{1,32}$/.test(vehicle) ? [id, vehicle] : null,
 	lock: !0
-}, async (source, id, model) => {
+}, async (source, id, vehicle) => {
 	let at = location(id);
-	return !at || distance(posOf(pedOf(source)), at.coords) > 3 ? fail("RENTAL_ERR_FAR") : rentals.rent(source, at, model);
+	return !at || distance(posOf(pedOf(source)), at.coords) > 3 ? fail("RENTAL_ERR_FAR") : rentals.rent(source, at, vehicle);
 }), onClientCallback(EVENTS.giveBack, {
 	args: ([id]) => typeof id == "string" ? [id] : null,
 	lock: !0

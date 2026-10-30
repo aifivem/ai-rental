@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-rental/data/vehicles.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    }
+  },
+  "patternProperties": {
+    "^[a-z0-9_]{2,32}$": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "description": "Model: The game's model name of the vehicle (addon vehicles too).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[a-z0-9_]{1,32}$"
+        },
+        "label": {
+          "description": "Name: The name in the rental menu.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "fee": {
+          "description": "Fee: Paid when renting, never given back.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "deposit": {
+          "description": "Deposit: Paid when renting, given back when the vehicle is returned in time.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "model",
+        "label",
+        "fee",
+        "deposit"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
