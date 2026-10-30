@@ -1,3 +1,4 @@
+import { PLACE_PED_SPEC, placePedFields } from "@aicore-fivem/lib/shared";
 import type { PanelSchema } from "@aicore-fivem/shared";
 
 const MODEL = "^[a-z0-9_]{1,32}$";
@@ -35,6 +36,7 @@ export const rentalSchema: PanelSchema = {
         vehicles: [],
       },
       sections: {
+        ped: PLACE_PED_SPEC,
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
         spawn: { type: "vec4" },
@@ -171,6 +173,12 @@ export const rentalSchema: PanelSchema = {
               ],
             },
           ],
+        },
+        {
+          icon: "user",
+          title: "ADMIN_C_PED",
+          desc: "ADMIN_C_PED_DESC",
+          fields: placePedFields(),
         },
       ],
     },

@@ -1,12 +1,4 @@
-import {
-  bool,
-  int,
-  num,
-  record,
-  str,
-  vec4,
-  type Vec4,
-} from "@aicore-fivem/lib/shared";
+import { bool, int, num, record, str, vec4, type Vec4, readPlacePed, type PlacePed } from "@aicore-fivem/lib/shared";
 
 /** ai-rental's contracts and panel content. No natives. */
 
@@ -52,6 +44,8 @@ export interface RentalVehicle {
 }
 
 export interface Location {
+  /** NPC standing at the place (panel), null for none. */
+  ped: PlacePed | null;
   id: string;
   label: string;
   coords: Point;
@@ -80,6 +74,7 @@ export function readLocations(raw: unknown): Map<string, Location> {
         : [],
     );
     out.set(id, {
+      ped: readPlacePed(v.ped),
       id,
       label: str(v.label, id, 48),
       coords: point(v.coords),

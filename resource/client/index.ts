@@ -35,6 +35,7 @@ function rebuild(): void {
   points.clear();
   for (const at of content.locations.values()) {
     points.add(`rent:${at.id}`, {
+      ped: at.ped ?? undefined,
       coords: at.coords,
       label: Locale("RENTAL_PROMPT_RENT", at.label),
       icon: "car",
