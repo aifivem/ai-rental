@@ -25,9 +25,9 @@ import {
 import { Locale, ResourceName } from "common";
 import {
   EVENTS,
-  readLocations,
+  readLocation,
   readSettings,
-  readVehicles,
+  readVehicle,
   type Location,
 } from "common/rental";
 import { migrateLocations } from "./migrate";
@@ -36,19 +36,15 @@ import { rentalSchema } from "./schema";
 const core = resourceExport("ai-core");
 const panel = new AdminPanel(rentalSchema);
 migrateLocations(panel);
-const vehicles = () => readVehicles(panel.get("vehicles"));
 const settings = panel.view("settings", readSettings);
-/** Panel content; locations are parsed again when they or the vehicle list change (their rows name list records). */
+/** Panel content, one record re-read per edit; a point's rows name vehicle list keys, looked up on rent. */
 const content = {
   get settings() {
     return settings.value;
   },
-  locations: readLocations(panel.get("locations"), vehicles()),
+  vehicles: panel.records("vehicles", readVehicle),
+  locations: panel.records("locations", readLocation),
 };
-const readAllLocations = () =>
-  (content.locations = readLocations(panel.get("locations"), vehicles()));
-panel.onChange("vehicles", readAllLocations);
-panel.onChange("locations", readAllLocations);
 // A rental point's vehicle rows name records of the vehicle list ("" = a row not picked yet).
 panel.rule("locations", (_key, next) => {
   const list = panel.get<Record<string, unknown>>("vehicles");
@@ -96,7 +92,9 @@ class Rentals {
     { ok: true; plate: string; minutes: number } | ReturnType<typeof fail>
   > {
     if (this.active.has(source)) return fail("RENTAL_ERR_ACTIVE");
-    const offer = location.vehicles.find((v) => v.id === vehicleKey);
+    const offer = location.vehicles.includes(vehicleKey)
+      ? content.vehicles.get(vehicleKey)
+      : undefined;
     if (!offer) return fail("RENTAL_ERR_GONE");
     const model = offer.model;
     if (nearestVehicleAt(location.spawn, 3)) return fail("RENTAL_ERR_BLOCKED");

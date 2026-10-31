@@ -20,4 +20,4 @@ Basic vehicle rental: panel-set rental points rent vehicles for a fee and a depo
 ## Entry points
 
 - Rental logic (rent, give back, expiry, cleanup): `resource/server/index.ts` `Rentals`.
-- Prompts, blips and the menu: `resource/client/index.ts`.
+- Prompts, blips and the menu: `resource/client/index.ts` (lib `RecordObjects`: an edited rental point rebuilds only its points, the return radius setting all; a point keeps its vehicle keys and looks them up in the list when the menu opens or a rent arrives, so a vehicle list edit rebuilds nothing).

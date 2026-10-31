@@ -79,7 +79,7 @@ const oneArg = (read) => ([value]) => {
 }, fail = (error) => ({
 	ok: !1,
 	error
-}), distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z), BLIP_STYLE_FIELDS = {
+}), distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z), isPublic = (rule) => rule.jobs.length === 0 && rule.gangs.length === 0, BLIP_STYLE_FIELDS = {
 	sprite: {
 		type: "number",
 		min: 0,
@@ -375,6 +375,7 @@ const CORE = {
 }, ADMIN = {
 	ace: "ai.admin",
 	openCallback: "ai-core:admin:open",
+	panelDataCallback: "ai-core:admin:panelData",
 	applyCallback: "ai-core:admin:apply",
 	closeEvent: "ai-core:admin:close",
 	showEvent: "ai-core:admin:show",
@@ -866,7 +867,7 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges), { rate: {
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelSummary", () => this.summary()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges), { rate: {
 			count: 4,
 			windowMs: 1e4
 		} }), setImmediate(() => core$15.RegisterAdminPanel(this.resource));
@@ -895,6 +896,27 @@ var AdminPanel = class {
 			schema: this.schema,
 			texts: loadLocaleTexts(),
 			data: clone(Object.fromEntries(this.data))
+		};
+	}
+	summary() {
+		let data = {}, index = {};
+		for (let [file, spec] of Object.entries(this.schema.files)) {
+			let content = this.data.get(file);
+			if (spec.kind !== "records") {
+				data[file] = clone(content ?? {});
+				continue;
+			}
+			let labels = {};
+			for (let [key, record] of Object.entries(content ?? {})) labels[key] = labelOf(record, spec.labelPath) ?? key;
+			index[file] = labels;
+		}
+		return {
+			resource: this.resource,
+			schema: this.schema,
+			texts: loadLocaleTexts(),
+			data,
+			loaded: !1,
+			index
 		};
 	}
 	apply(admin, raw) {
@@ -980,6 +1002,15 @@ var AdminPanel = class {
 		this.data.set(name, data), (filled || raw === null || !file.hasSchemaRef()) && file.write(data);
 	}
 };
+function labelOf(record, path) {
+	if (!path) return null;
+	let at = record;
+	for (let part of path.split(".")) {
+		if (typeof at != "object" || !at) return null;
+		at = at[part];
+	}
+	return typeof at == "string" && at !== "" ? at : null;
+}
 // ../../../packages/lib/src/server/log.ts
 function aiLog(channel, message, options) {
 	optionalExport("ai-core")?.Log(channel, message, options);
@@ -1098,6 +1129,20 @@ var OnlinePlayers = class {
 	onDutyIn(source, jobs) {
 		let duty = this.dutyJob(source);
 		return duty !== null && jobs.includes(duty);
+	}
+	allows(source, rule) {
+		if (isPublic(rule)) return !0;
+		let min = (name) => rule.grades[name] ?? 0;
+		for (let gang of rule.gangs) {
+			let grade = this.gangGrade(source, gang);
+			if (grade !== null && grade >= min(gang)) return !0;
+		}
+		let duty = rule.onDuty ? this.dutyJob(source) : null;
+		for (let job of rule.jobs) {
+			let grade = this.jobGrade(source, job);
+			if (grade !== null && grade >= min(job) && (!rule.onDuty || duty === job)) return !0;
+		}
+		return !1;
 	}
 	countOnDuty(jobs) {
 		this.start();
@@ -1348,49 +1393,36 @@ function readSettings(raw) {
 		returnRadius: num(v.returnRadius, 15, 3, 50)
 	};
 }
-function readVehicles(raw) {
-	let out = new Map();
-	for (let [id, value] of Object.entries(record(raw))) {
-		let v = record(value);
-		typeof v.model == "string" && v.model && out.set(id, {
-			id,
-			model: v.model.toLowerCase(),
-			label: str(v.label, v.model, 48),
-			fee: int(v.fee, 0, 0),
-			deposit: int(v.deposit, 0, 0)
-		});
-	}
-	return out;
+function readVehicle(id, v) {
+	return typeof v.model != "string" || !v.model ? null : {
+		id,
+		model: v.model.toLowerCase(),
+		label: str(v.label, v.model, 48),
+		fee: int(v.fee, 0, 0),
+		deposit: int(v.deposit, 0, 0)
+	};
 }
-function readLocations(raw, list) {
-	let out = new Map();
-	for (let [id, value] of Object.entries(record(raw))) {
-		let v = record(value), vehicles = rows(v.vehicles).flatMap((row) => {
-			let found = typeof row.vehicle == "string" ? list.get(row.vehicle) : void 0;
-			return found ? [found] : [];
-		});
-		out.set(id, {
-			ped: readPlacePed(v.ped),
-			id,
-			label: str(v.label, id, 48),
-			coords: point(v.coords),
-			spawn: vec4(v.spawn, {
-				x: 0,
-				y: 0,
-				z: 0,
-				heading: 0
-			}),
-			blip: bool(v.blip, !0),
-			blipStyle: readBlipStyle(v.blipStyle, {
-				sprite: 225,
-				color: 2,
-				scale: .7
-			}),
-			minutes: int(v.minutes, 60, 0, 1440),
-			vehicles
-		});
-	}
-	return out;
+function readLocation(id, v) {
+	return {
+		ped: readPlacePed(v.ped),
+		id,
+		label: str(v.label, id, 48),
+		coords: point(v.coords),
+		spawn: vec4(v.spawn, {
+			x: 0,
+			y: 0,
+			z: 0,
+			heading: 0
+		}),
+		blip: bool(v.blip, !0),
+		blipStyle: readBlipStyle(v.blipStyle, {
+			sprite: 225,
+			color: 2,
+			scale: .7
+		}),
+		minutes: int(v.minutes, 60, 0, 1440),
+		vehicles: rows(v.vehicles).flatMap((row) => typeof row.vehicle == "string" && row.vehicle ? [row.vehicle] : [])
+	};
 }
 // resource/server/migrate.ts
 function keyFor(vehicles, offer) {
@@ -1725,13 +1757,14 @@ const MONEY = {
 	]
 }, core = resourceExport("ai-core"), panel = new AdminPanel(rentalSchema);
 migrateLocations(panel);
-const vehicles = () => readVehicles(panel.get("vehicles")), settings = panel.view("settings", readSettings), content = {
+const settings = panel.view("settings", readSettings), content = {
 	get settings() {
 		return settings.value;
 	},
-	locations: readLocations(panel.get("locations"), vehicles())
-}, readAllLocations = () => content.locations = readLocations(panel.get("locations"), vehicles());
-panel.onChange("vehicles", readAllLocations), panel.onChange("locations", readAllLocations), panel.rule("locations", (_key, next) => {
+	vehicles: panel.records("vehicles", readVehicle),
+	locations: panel.records("locations", readLocation)
+};
+panel.rule("locations", (_key, next) => {
 	let list = panel.get("vehicles");
 	return (Array.isArray(next.vehicles) ? next.vehicles : []).every((row) => {
 		let key = isRecord(row) ? row.vehicle : void 0;
@@ -1748,7 +1781,7 @@ const rentals = new class {
 	}
 	async rent(source, location, vehicleKey) {
 		if (this.active.has(source)) return fail("RENTAL_ERR_ACTIVE");
-		let offer = location.vehicles.find((v) => v.id === vehicleKey);
+		let offer = location.vehicles.includes(vehicleKey) ? content.vehicles.get(vehicleKey) : void 0;
 		if (!offer) return fail("RENTAL_ERR_GONE");
 		let model = offer.model;
 		if (nearestVehicleAt(location.spawn, 3)) return fail("RENTAL_ERR_BLOCKED");

@@ -56,20 +56,19 @@ export interface RentalVehicle {
   deposit: number;
 }
 
-export function readVehicles(raw: unknown): Map<string, RentalVehicle> {
-  const out = new Map<string, RentalVehicle>();
-  for (const [id, value] of Object.entries(record(raw))) {
-    const v = record(value);
-    if (typeof v.model !== "string" || !v.model) continue;
-    out.set(id, {
-      id,
-      model: v.model.toLowerCase(),
-      label: str(v.label, v.model, 48),
-      fee: int(v.fee, 0, 0),
-      deposit: int(v.deposit, 0, 0),
-    });
-  }
-  return out;
+/** One vehicle of the list (`panel.records` / `world.records`); null without a model. */
+export function readVehicle(
+  id: string,
+  v: Record<string, unknown>,
+): RentalVehicle | null {
+  if (typeof v.model !== "string" || !v.model) return null;
+  return {
+    id,
+    model: v.model.toLowerCase(),
+    label: str(v.label, v.model, 48),
+    fee: int(v.fee, 0, 0),
+    deposit: int(v.deposit, 0, 0),
+  };
 }
 
 export interface Location {
@@ -83,38 +82,37 @@ export interface Location {
   blipStyle: { sprite: number; color: number; scale: number };
   /** How long a rental lasts; 0 = until it is given back. */
   minutes: number;
-  /** What this point rents out, from the vehicle list. */
-  vehicles: RentalVehicle[];
+  /** What this point rents out: keys of the vehicle list ("" rows left out), looked up on use (`offersAt`). */
+  vehicles: string[];
 }
 
-/** Rental points with their vehicles looked up in the vehicle list (a key no longer in the list is left out). */
-export function readLocations(
-  raw: unknown,
-  list: Map<string, RentalVehicle>,
-): Map<string, Location> {
-  const out = new Map<string, Location>();
-  for (const [id, value] of Object.entries(record(raw))) {
-    const v = record(value);
-    const vehicles = rows(v.vehicles).flatMap((row) => {
-      const found =
-        typeof row.vehicle === "string" ? list.get(row.vehicle) : undefined;
-      return found ? [found] : [];
-    });
-    out.set(id, {
-      ped: readPlacePed(v.ped),
-      id,
-      label: str(v.label, id, 48),
-      coords: point(v.coords),
-      spawn: vec4(v.spawn, { x: 0, y: 0, z: 0, heading: 0 }),
-      blip: bool(v.blip, true),
-      blipStyle: readBlipStyle(v.blipStyle, {
-        sprite: 225,
-        color: 2,
-        scale: 0.7,
-      }),
-      minutes: int(v.minutes, 60, 0, 1440),
-      vehicles,
-    });
-  }
-  return out;
+/** One rental point (`panel.records` / `world.records`). */
+export function readLocation(id: string, v: Record<string, unknown>): Location {
+  return {
+    ped: readPlacePed(v.ped),
+    id,
+    label: str(v.label, id, 48),
+    coords: point(v.coords),
+    spawn: vec4(v.spawn, { x: 0, y: 0, z: 0, heading: 0 }),
+    blip: bool(v.blip, true),
+    blipStyle: readBlipStyle(v.blipStyle, {
+      sprite: 225,
+      color: 2,
+      scale: 0.7,
+    }),
+    minutes: int(v.minutes, 60, 0, 1440),
+    vehicles: rows(v.vehicles).flatMap((row) =>
+      typeof row.vehicle === "string" && row.vehicle ? [row.vehicle] : [],
+    ),
+  };
 }
+
+/** A rental point's offers from the vehicle list (a key no longer in the list is left out). */
+export const offersAt = (
+  location: Location,
+  list: ReadonlyMap<string, RentalVehicle>,
+): RentalVehicle[] =>
+  location.vehicles.flatMap((key) => {
+    const found = list.get(key);
+    return found ? [found] : [];
+  });
