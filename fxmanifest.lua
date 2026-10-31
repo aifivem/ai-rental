@@ -1,6 +1,6 @@
 name 'ai-rental'
 author 'TGIANN'
-version '0.1.0' -- x-release-please-version
+version '0.1.1' -- x-release-please-version
 license 'GPL-3.0-only'
 description 'Basic vehicle rental: panel-set rental points, fee and deposit, keys and fuel through ai-core'
 repository 'https://github.com/aifivem/ai-rental'
