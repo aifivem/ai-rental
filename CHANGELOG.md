@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/aifivem/ai-rental/compare/v0.1.1...v0.1.2) (2026-10-31)
+
+
+### Miscellaneous Chores
+
+* rebuild with the current lib ([6725f50](https://github.com/aifivem/ai-rental/commit/6725f50bca40f61b7cc93d438be5d245d90ba408))
+
 ## [0.1.1](https://github.com/aifivem/ai-rental/compare/v0.1.0...v0.1.1) (2026-10-31)
 
 
