@@ -8,6 +8,7 @@ import {
   nearestVehicleAt,
   notify,
   onClientCallback,
+  onStop,
   PlayerMap,
   randomPlate,
   resourceExport,
@@ -22,7 +23,7 @@ import {
   oneArg,
   readText,
 } from "@aicore-fivem/lib/shared";
-import { Locale, ResourceName } from "common";
+import { Locale } from "common";
 import {
   EVENTS,
   readLocation,
@@ -266,7 +267,6 @@ onClientCallback(
   },
 );
 
-on("onResourceStop", (resource: string) => {
-  if (resource !== ResourceName) return;
+onStop(() => {
   rentals.endAll();
 });

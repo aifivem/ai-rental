@@ -365,6 +365,8 @@ const CORE = {
 	vehicleTypeCallback: "ai-core:vehicleType",
 	interactionStateKey: "ai:interaction",
 	pvpStateKey: "ai:pvp",
+	medicalStateKey: "ai:medical",
+	clientDeadEvent: "ai-core:client:dead",
 	charactersCallback: "ai-core:characters",
 	createCharacterCallback: "ai-core:createCharacter",
 	deleteCharacterCallback: "ai-core:deleteCharacter",
@@ -1105,6 +1107,9 @@ var OnlinePlayers = class {
 	character(source) {
 		return this.start(), this.players.get(source)?.character ?? null;
 	}
+	charId(source) {
+		return this.start(), this.players.get(source)?.character.id;
+	}
 	name(source, options = {}) {
 		let c = this.character(source);
 		return c ? `${c.firstname} ${c.lastname}` : options.fallback === !1 ? "" : GetPlayerName(String(source));
@@ -1232,9 +1237,9 @@ function nearestVehicleAt(point, metres, filter) {
 }
 resourceExport(CORE.resource), createLogger(GetCurrentResourceName());
 const dropped = new Set();
-let listening = !1;
+let listening$1 = !1;
 function onDropped(fn) {
-	listening || (listening = !0, on("playerDropped", () => {
+	listening$1 || (listening$1 = !0, on("playerDropped", () => {
 		let source = Number(globalThis.source);
 		for (let handler of dropped) handler(source);
 	})), dropped.add(fn);
@@ -1301,6 +1306,23 @@ createLogger(resource), new class {
 		});
 	}
 }(), createLogger(GetCurrentResourceName()), createLogger("aicore-lib");
+// ../../../packages/lib/src/fivem/byResource.ts
+const stopHandlers = [];
+let listening = !1;
+function onAnyStop(handler) {
+	if (stopHandlers.push(handler), listening) return;
+	listening = !0;
+	let event = IsDuplicityVersion() ? "onResourceStop" : "onClientResourceStop";
+	on(event, (resource) => {
+		for (let stop of stopHandlers) stop(resource);
+	});
+}
+function onStop(fn) {
+	let self = GetCurrentResourceName();
+	onAnyStop((resource) => {
+		resource === self && fn();
+	});
+}
 // ../../../packages/lib/src/fivem/scheduler.ts
 var Group = class {
 	interval;
@@ -1393,8 +1415,8 @@ function isOnline(source) {
 	return !!GetPlayerName(String(source));
 }
 // resource/common/locale.ts
-const Locale = createLocale(), ResourceName = GetCurrentResourceName();
-IsDuplicityVersion();
+const Locale = createLocale();
+GetCurrentResourceName(), IsDuplicityVersion();
 // resource/common/rental.ts
 const EVENTS = {
 	rent: "ai-rental:rent",
@@ -1913,6 +1935,6 @@ onClientCallback(EVENTS.rent, {
 }, (source, id) => {
 	let at = content.locations.get(id);
 	return !at || !isNear(source, at.coords, content.settings.returnRadius) ? fail("RENTAL_ERR_FAR") : rentals.giveBack(source, at);
-}), on("onResourceStop", (resource) => {
-	resource === ResourceName && rentals.endAll();
+}), onStop(() => {
+	rentals.endAll();
 });
