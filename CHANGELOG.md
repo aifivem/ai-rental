@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/aifivem/ai-rental/compare/v0.1.2...v0.1.3) (2026-11-01)
+
+
+### Code Refactoring
+
+* feature folders, side entries that only import, panel schema per tab ([c3ed269](https://github.com/aifivem/ai-rental/commit/c3ed2690ec5cb2daafed8d7909d0931e5c474d1e))
+
 ## [0.1.2](https://github.com/aifivem/ai-rental/compare/v0.1.1...v0.1.2) (2026-10-31)
 
 
