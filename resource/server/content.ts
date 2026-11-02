@@ -1,5 +1,5 @@
-import { AdminPanel } from "@aicore-fivem/lib/server";
-import { isRecord } from "@aicore-fivem/lib/shared";
+import { AdminPanel } from "@aifivem/lib/server";
+import { isRecord } from "@aifivem/lib/shared";
 import { readLocation, readSettings, readVehicle } from "common/rental";
 import { migrateLocations } from "./migrate";
 import { rentalSchema } from "./schema";

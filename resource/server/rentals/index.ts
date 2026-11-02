@@ -3,8 +3,8 @@ import {
   isNear,
   onClientCallback,
   onStop,
-} from "@aicore-fivem/lib/server";
-import { fail, oneArg, readText } from "@aicore-fivem/lib/shared";
+} from "@aifivem/lib/server";
+import { fail, oneArg, readText } from "@aifivem/lib/shared";
 import { EVENTS } from "common/rental";
 import { content } from "../content";
 import { Rentals } from "./rentals";

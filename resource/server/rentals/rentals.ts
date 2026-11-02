@@ -10,8 +10,8 @@ import {
   spawnVehicle,
   vehicleKeys,
   vehicleType,
-} from "@aicore-fivem/lib/server";
-import { distance, fail } from "@aicore-fivem/lib/shared";
+} from "@aifivem/lib/server";
+import { distance, fail } from "@aifivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, type Location } from "common/rental";
 import { content } from "../content";
