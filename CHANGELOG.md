@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.5](https://github.com/aifivem/ai-rental/compare/v0.1.4...v0.1.5) (2026-11-02)
+
+
+### Documentation
+
+* install from the release zip ([1626703](https://github.com/aifivem/ai-rental/commit/1626703a996e91cbc79d323970199e74d8cbf5c8))
+
+
+### Miscellaneous Chores
+
+* build files are no longer in git, the release zip carries them ([e9897b0](https://github.com/aifivem/ai-rental/commit/e9897b01c033799397d60eb2ef3d9ee0f95e1c9e))
+
 ## [0.1.4](https://github.com/aifivem/ai-rental/compare/v0.1.3...v0.1.4) (2026-11-02)
 
 
