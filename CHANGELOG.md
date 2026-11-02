@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/aifivem/ai-rental/compare/v0.1.3...v0.1.4) (2026-11-02)
+
+
+### Code Refactoring
+
+* import the shared packages from [@aifivem](https://github.com/aifivem) ([029dff0](https://github.com/aifivem/ai-rental/commit/029dff0e4b431f53efd4c662dd339df2ad04aba2))
+
 ## [0.1.3](https://github.com/aifivem/ai-rental/compare/v0.1.2...v0.1.3) (2026-11-01)
 
 
